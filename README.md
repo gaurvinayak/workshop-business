@@ -3,7 +3,7 @@
 > Open-source business management software for small rig / workshop / fabrication businesses.
 > One place for attendance, payroll, inventory, purchasing, invoicing, and basic accounting.
 
-**Status:** Phase 0 scaffolded — a runnable foundation (monorepo, auth + RBAC, first-run setup, and the double-entry journal engine). See [`docs/PHASE-0-STATUS.md`](docs/PHASE-0-STATUS.md) for what's built and [`DEVELOPMENT.md`](DEVELOPMENT.md) to run it locally. Operational modules (attendance, payroll, inventory, purchasing, invoicing) follow per the [roadmap](docs/06-roadmap.md).
+**Status:** Phase 1 (MVP) implemented and validated end-to-end — attendance, payroll, inventory, purchasing, invoicing, and accounting all working, with the double-entry ledger staying balanced across every transaction type. See [`docs/PHASE-1-STATUS.md`](docs/PHASE-1-STATUS.md) for what's built and how it was verified, and [`DEVELOPMENT.md`](DEVELOPMENT.md) to run it locally. Phase 2 refinements (PDFs, email, quotations, leave balances, self-service) follow per the [roadmap](docs/06-roadmap.md).
 
 ---
 
@@ -41,7 +41,8 @@ See [`docs/00-overview.md`](docs/00-overview.md) for the full build-vs-buy analy
 | [04 — API design](docs/04-api-design.md) | REST conventions, key endpoints, auth |
 | [05 — Security & operations](docs/05-security-and-ops.md) | RBAC, backups, deployment, self-host vs cloud |
 | [06 — Roadmap](docs/06-roadmap.md) | Phased delivery: MVP → v1 → v2, estimates, milestones |
-| [Phase 0 status](docs/PHASE-0-STATUS.md) | What the current scaffold delivers |
+| [Phase 0 status](docs/PHASE-0-STATUS.md) | The foundation scaffold |
+| [Phase 1 status](docs/PHASE-1-STATUS.md) | The MVP — modules built and how they were validated |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | How to install, run, and develop locally |
 
 ## Quick mental model
