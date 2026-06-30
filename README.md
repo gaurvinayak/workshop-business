@@ -43,6 +43,7 @@ See [`docs/00-overview.md`](docs/00-overview.md) for the full build-vs-buy analy
 | [06 — Roadmap](docs/06-roadmap.md) | Phased delivery: MVP → v1 → v2, estimates, milestones |
 | [Phase 0 status](docs/PHASE-0-STATUS.md) | The foundation scaffold |
 | [Phase 1 status](docs/PHASE-1-STATUS.md) | The MVP — modules built and how they were validated |
+| [Phase 2 status](docs/PHASE-2-STATUS.md) | Workflow round-out: reports, printable invoices, CSV (in progress) |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | How to install, run, and develop locally |
 
 ## Quick mental model

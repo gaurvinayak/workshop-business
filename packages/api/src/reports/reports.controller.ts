@@ -21,4 +21,10 @@ export class ReportsController {
 
   @Get('payables-aging') @RequirePermissions(PERMISSIONS.REPORT_VIEW)
   payables() { return this.reports.payablesAging(); }
+
+  @Get('tax-summary') @RequirePermissions(PERMISSIONS.REPORT_VIEW)
+  taxSummary(@Query('from') from?: string, @Query('to') to?: string) { return this.reports.taxSummary(from, to); }
+
+  @Get('day-book') @RequirePermissions(PERMISSIONS.REPORT_VIEW)
+  dayBook(@Query('from') from?: string, @Query('to') to?: string) { return this.reports.dayBook(from, to); }
 }

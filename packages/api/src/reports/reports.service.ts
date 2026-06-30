@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AccountType } from '@prisma/client';
-import { Money } from '@workshopos/shared';
+import { ACCOUNT_CODES, Money } from '@workshopos/shared';
 import { PrismaService } from '../prisma/prisma.service';
 
 function isDebitNormal(type: AccountType): boolean {
@@ -167,6 +167,57 @@ export class ReportsService {
       date: b.date,
       outstanding: Money.of(b.total.toString()).subtract(b.amountPaid.toString()),
     })));
+  }
+
+  /** Output tax collected vs input tax paid for a period -> net liability. */
+  async taxSummary(from?: string, to?: string) {
+    const dateRange = { gte: from ? new Date(from) : undefined, lte: to ? new Date(to) : undefined };
+    const accounts = await this.prisma.account.findMany({
+      where: { code: { in: [ACCOUNT_CODES.OUTPUT_TAX, ACCOUNT_CODES.INPUT_TAX] } },
+    });
+    const outputId = accounts.find((a) => a.code === ACCOUNT_CODES.OUTPUT_TAX)?.id;
+    const inputId = accounts.find((a) => a.code === ACCOUNT_CODES.INPUT_TAX)?.id;
+
+    const grouped = await this.prisma.journalLine.groupBy({
+      by: ['accountId'],
+      _sum: { debit: true, credit: true },
+      where: { accountId: { in: [outputId, inputId].filter((x): x is string => !!x) }, entry: { date: dateRange } },
+    });
+    const get = (id?: string) => grouped.find((g) => g.accountId === id);
+    const out = get(outputId);
+    const inp = get(inputId);
+    // Output tax is a liability (credit-normal); input tax an asset (debit-normal).
+    const outputTax = Money.of(out?._sum.credit?.toString() ?? '0').subtract(out?._sum.debit?.toString() ?? '0');
+    const inputTax = Money.of(inp?._sum.debit?.toString() ?? '0').subtract(inp?._sum.credit?.toString() ?? '0');
+
+    return {
+      from: from ?? null,
+      to: to ?? null,
+      outputTax: outputTax.toString(),
+      inputTax: inputTax.toString(),
+      netPayable: outputTax.subtract(inputTax).toString(),
+    };
+  }
+
+  /** All journal entries for a date range, newest first. */
+  async dayBook(from?: string, to?: string) {
+    const entries = await this.prisma.journalEntry.findMany({
+      where: { date: { gte: from ? new Date(from) : undefined, lte: to ? new Date(to) : undefined } },
+      orderBy: [{ date: 'desc' }, { number: 'desc' }],
+      include: { lines: { include: { account: true } } },
+      take: 500,
+    });
+    return entries.map((e) => ({
+      number: e.number,
+      date: e.date,
+      narration: e.narration,
+      sourceType: e.sourceType,
+      lines: e.lines.map((l) => ({
+        account: `${l.account.code} ${l.account.name}`,
+        debit: l.debit.toString(),
+        credit: l.credit.toString(),
+      })),
+    }));
   }
 
   private bucketize(items: { party: string; ref: string; date: Date; outstanding: Money }[]) {

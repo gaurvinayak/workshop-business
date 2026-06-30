@@ -80,3 +80,20 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .stat { font-size: 26px; font-weight: 700; margin-top: 6px; }
 .row { display: flex; gap: 10px; align-items: flex-end; }
 .row > * { flex: 1; }
+
+.invoice-paper {
+  background: white;
+  color: #111;
+  padding: 40px;
+  border-radius: 8px;
+  max-width: 800px;
+}
+.invoice-paper .muted { color: #666; }
+.invoice-paper th, .invoice-paper td { border-bottom: 1px solid #ddd; }
+
+@media print {
+  .sidebar, .no-print { display: none !important; }
+  body { background: white; }
+  .content, .print-page { padding: 0 !important; }
+  .invoice-paper { box-shadow: none; max-width: 100%; }
+}

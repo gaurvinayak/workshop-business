@@ -15,6 +15,7 @@ import Purchasing from './routes/Purchasing';
 import Sales from './routes/Sales';
 import Payroll from './routes/Payroll';
 import Reports from './routes/Reports';
+import InvoicePrint from './routes/InvoicePrint';
 
 interface NavItem { to: string; label: string; perm?: PermissionCode; element: JSX.Element; }
 
@@ -53,6 +54,7 @@ function Shell() {
       <main className="content">
         <Routes>
           {visible.map((n) => <Route key={n.to} path={n.to} element={n.element} />)}
+          <Route path="/print/invoice/:id" element={<InvoicePrint />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

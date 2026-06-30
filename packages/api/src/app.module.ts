@@ -17,6 +17,7 @@ import { SalesModule } from './sales/sales.module';
 import { PayrollModule } from './payroll/payroll.module';
 import { ReportsModule } from './reports/reports.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { SettingsModule } from './settings/settings.module';
 import { HealthController } from './health/health.controller';
 
 import { JwtAuthGuard } from './common/jwt-auth.guard';
@@ -42,6 +43,7 @@ import { AuditInterceptor } from './common/audit.interceptor';
     PayrollModule,
     ReportsModule,
     DashboardModule,
+    SettingsModule,
   ],
   controllers: [HealthController],
   providers: [

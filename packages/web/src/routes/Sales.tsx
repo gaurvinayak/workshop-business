@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useApi, errMsg } from '../lib/useApi';
 import { useAuth } from '../lib/auth';
@@ -103,15 +104,16 @@ export default function Sales() {
       <div className="card">
         <h3 style={{ marginTop: 0 }}>Invoices</h3>
         <table>
-          <thead><tr><th>Number</th><th>Customer</th><th>Date</th><th>Status</th><th className="num">Total</th><th className="num">Paid</th></tr></thead>
+          <thead><tr><th>Number</th><th>Customer</th><th>Date</th><th>Status</th><th className="num">Total</th><th className="num">Paid</th><th></th></tr></thead>
           <tbody>
             {invoices.data?.map((i) => (
               <tr key={i.id}>
                 <td>{i.number ?? '(draft)'}</td><td>{i.customer.name}</td><td>{i.date.slice(0, 10)}</td>
                 <td className="muted">{i.status}</td><td className="num">{i.total}</td><td className="num">{i.amountPaid}</td>
+                <td><Link to={`/print/invoice/${i.id}`}>Print</Link></td>
               </tr>
             ))}
-            {!invoices.data?.length && <tr><td colSpan={6} className="muted">No invoices yet.</td></tr>}
+            {!invoices.data?.length && <tr><td colSpan={7} className="muted">No invoices yet.</td></tr>}
           </tbody>
         </table>
       </div>
