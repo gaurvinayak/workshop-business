@@ -1,0 +1,25 @@
+{
+  "name": "workshopos",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Open-source management software for small rig/workshop businesses",
+  "license": "MIT",
+  "workspaces": [
+    "packages/shared",
+    "packages/api",
+    "packages/web"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "dev:api": "npm run dev --workspace @workshopos/api",
+    "dev:web": "npm run dev --workspace @workshopos/web",
+    "db:migrate": "npm run db:migrate --workspace @workshopos/api",
+    "db:seed": "npm run db:seed --workspace @workshopos/api"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

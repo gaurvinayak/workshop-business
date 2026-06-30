@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: workshopos
+          POSTGRES_PASSWORD: workshopos
+          POSTGRES_DB: workshopos_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U workshopos"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://workshopos:workshopos@localhost:5432/workshopos_test?schema=public
+      JWT_ACCESS_SECRET: test-access-secret-please-change
+      JWT_REFRESH_SECRET: test-refresh-secret-please-change
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build shared package
+        run: npm run build --workspace @workshopos/shared
+
+      - name: Generate Prisma client
+        run: npm run db:generate --workspace @workshopos/api
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Apply migrations (smoke)
+        run: npm run db:deploy --workspace @workshopos/api
+
+      - name: Build all
+        run: npm run build

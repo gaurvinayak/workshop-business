@@ -1,0 +1,230 @@
+// WorkshopOS database schema — Phase 0.
+// Covers identity/RBAC, audit log, business settings, fiscal years, and the
+// double-entry accounting core (chart of accounts + journal). Operational
+// modules (HR, attendance, payroll, inventory, purchasing, sales) are added
+// in later phases.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity & access control
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  isActive     Boolean  @default(true)
+  totpSecret   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  roles         UserRole[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+  postedEntries JournalEntry[] @relation("PostedBy")
+
+  @@map("user")
+}
+
+model Role {
+  id          String  @id @default(uuid())
+  code        String  @unique
+  name        String
+  description String?
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  @@map("role")
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  code        String  @unique
+  description String?
+
+  roles RolePermission[]
+
+  @@map("permission")
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_role")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permission")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("refresh_token")
+}
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id       String   @id @default(uuid())
+  userId   String?
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action   String // e.g. "POST /api/v1/journal-entries"
+  entity   String? // e.g. "JournalEntry"
+  entityId String?
+  before   Json?
+  after    Json?
+  ip       String?
+  at       DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@map("audit_log")
+}
+
+// ---------------------------------------------------------------------------
+// Business setup
+// ---------------------------------------------------------------------------
+
+model BusinessSetting {
+  id        String   @id @default(uuid())
+  name      String
+  currency  String // ISO 4217, e.g. INR
+  timezone  String // IANA, e.g. Asia/Kolkata
+  taxId     String?
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("business_setting")
+}
+
+enum FiscalYearStatus {
+  OPEN
+  CLOSED
+}
+
+model FiscalYear {
+  id        String           @id @default(uuid())
+  name      String
+  startDate DateTime         @db.Date
+  endDate   DateTime         @db.Date
+  status    FiscalYearStatus @default(OPEN)
+  createdAt DateTime         @default(now())
+
+  entries JournalEntry[]
+
+  @@map("fiscal_year")
+}
+
+// ---------------------------------------------------------------------------
+// Accounting core (double-entry)
+// ---------------------------------------------------------------------------
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+model Account {
+  id         String      @id @default(uuid())
+  code       String      @unique
+  name       String
+  type       AccountType
+  parentId   String?
+  parent     Account?    @relation("AccountTree", fields: [parentId], references: [id])
+  children   Account[]   @relation("AccountTree")
+  isPostable Boolean     @default(true)
+  isSystem   Boolean     @default(false)
+  isActive   Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+
+  lines JournalLine[]
+
+  @@index([type])
+  @@map("account")
+}
+
+model JournalEntry {
+  id           String   @id @default(uuid())
+  number       String   @unique
+  date         DateTime @db.Date
+  narration    String
+  // Where this entry came from (invoice, payroll run, manual, ...).
+  sourceType   String   @default("manual")
+  sourceId     String?
+  fiscalYearId String
+  fiscalYear   FiscalYear @relation(fields: [fiscalYearId], references: [id])
+  postedById   String?
+  postedBy     User?      @relation("PostedBy", fields: [postedById], references: [id], onDelete: SetNull)
+  // Reversal linkage — posted entries are never edited, only reversed.
+  reversesId   String?    @unique
+  reverses     JournalEntry?  @relation("Reversal", fields: [reversesId], references: [id])
+  reversedBy   JournalEntry?  @relation("Reversal")
+  createdAt    DateTime   @default(now())
+
+  lines JournalLine[]
+
+  @@index([date])
+  @@index([sourceType, sourceId])
+  @@map("journal_entry")
+}
+
+model JournalLine {
+  id          String  @id @default(uuid())
+  entryId     String
+  entry       JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  accountId   String
+  account     Account @relation(fields: [accountId], references: [id])
+  debit       Decimal @default(0) @db.Decimal(18, 4)
+  credit      Decimal @default(0) @db.Decimal(18, 4)
+  description String?
+  // Optional party reference (customer/supplier/employee) for sub-ledgers.
+  partyType   String?
+  partyId     String?
+
+  @@index([entryId])
+  @@index([accountId])
+  @@index([partyType, partyId])
+  @@map("journal_line")
+}
+
+// Gap-free document numbering, incremented inside the posting transaction.
+model DocumentSequence {
+  key   String @id // e.g. "journal:2026"
+  value Int    @default(0)
+
+  @@map("document_sequence")
+}
