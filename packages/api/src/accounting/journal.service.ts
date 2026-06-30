@@ -96,6 +96,13 @@ export class JournalService {
     });
   }
 
+  /** Resolve a system account id by its stable code (for automated postings). */
+  async accountIdByCode(tx: Tx, code: string): Promise<string> {
+    const acc = await tx.account.findUnique({ where: { code } });
+    if (!acc) throw AppError.validation(`System account ${code} is missing from the chart of accounts`);
+    return acc.id;
+  }
+
   /** Gap-free, per-year sequential number generated inside the transaction. */
   private async nextNumber(tx: Tx, year: number): Promise<string> {
     const key = `journal:${year}`;

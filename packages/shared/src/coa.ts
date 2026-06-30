@@ -14,6 +14,28 @@ export interface SeedAccount {
   system?: boolean;
 }
 
+/**
+ * Stable codes for the system accounts that automated postings target.
+ * Modules resolve the account id by these codes at posting time.
+ */
+export const ACCOUNT_CODES = {
+  CASH: '1010',
+  BANK: '1020',
+  ACCOUNTS_RECEIVABLE: '1100',
+  INVENTORY: '1200',
+  INPUT_TAX: '1210',
+  ACCOUNTS_PAYABLE: '2100',
+  OUTPUT_TAX: '2200',
+  SALARY_PAYABLE: '2300',
+  STATUTORY_PAYABLE: '2310',
+  OWNERS_CAPITAL: '3100',
+  RETAINED_EARNINGS: '3900',
+  SALES: '4100',
+  COGS: '5100',
+  SALARY_EXPENSE: '5200',
+  INVENTORY_ADJUSTMENT: '5300',
+} as const;
+
 export const DEFAULT_CHART_OF_ACCOUNTS: SeedAccount[] = [
   // Assets
   { code: '1000', name: 'Assets', type: 'ASSET', parentCode: null, isPostable: false },

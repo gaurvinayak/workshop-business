@@ -12,3 +12,6 @@ coverage/
 *.tsbuildinfo
 packages/api/prisma/*.db
 .cache/
+
+# Local Prisma engine binaries (downloaded, not committed)
+.prisma-engines/

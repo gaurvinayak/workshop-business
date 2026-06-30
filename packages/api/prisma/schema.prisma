@@ -31,6 +31,7 @@ model User {
   refreshTokens RefreshToken[]
   auditLogs     AuditLog[]
   postedEntries JournalEntry[] @relation("PostedBy")
+  employee      Employee?
 
   @@map("user")
 }
@@ -227,4 +228,628 @@ model DocumentSequence {
   value Int    @default(0)
 
   @@map("document_sequence")
+}
+
+// ---------------------------------------------------------------------------
+// HR
+// ---------------------------------------------------------------------------
+
+model Department {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  employees Employee[]
+
+  @@map("department")
+}
+
+model Designation {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  employees Employee[]
+
+  @@map("designation")
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  LEFT
+}
+
+model Employee {
+  id            String         @id @default(uuid())
+  code          String         @unique
+  name          String
+  phone         String?
+  email         String?
+  address       String?
+  dateOfBirth   DateTime?      @db.Date
+  dateJoined    DateTime       @db.Date
+  dateLeft      DateTime?      @db.Date
+  status        EmployeeStatus @default(ACTIVE)
+  departmentId  String?
+  department    Department?    @relation(fields: [departmentId], references: [id])
+  designationId String?
+  designation   Designation?   @relation(fields: [designationId], references: [id])
+  // Sensitive — gated by employee.view_sensitive.
+  bankAccount   String?
+  bankIfsc      String?
+  taxId         String?
+  // Optional login link.
+  userId        String?        @unique
+  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  shifts         EmployeeShift[]
+  attendance     Attendance[]
+  leaveRequests  LeaveRequest[]
+  leaveBalances  LeaveBalance[]
+  salaryStructs  SalaryStructure[]
+  payslips       Payslip[]
+
+  @@map("employee")
+}
+
+// ---------------------------------------------------------------------------
+// Attendance & leave
+// ---------------------------------------------------------------------------
+
+model Shift {
+  id           String          @id @default(uuid())
+  name         String
+  startTime    String // HH:MM
+  endTime      String // HH:MM
+  breakMinutes Int             @default(0)
+  graceMinutes Int             @default(0)
+  assignments  EmployeeShift[]
+
+  @@map("shift")
+}
+
+model EmployeeShift {
+  id            String   @id @default(uuid())
+  employeeId    String
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  shiftId       String
+  shift         Shift    @relation(fields: [shiftId], references: [id])
+  effectiveFrom DateTime @db.Date
+
+  @@index([employeeId])
+  @@map("employee_shift")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  LEAVE
+  HOLIDAY
+  WEEKLY_OFF
+}
+
+model Attendance {
+  id              String           @id @default(uuid())
+  employeeId      String
+  employee        Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date            DateTime         @db.Date
+  checkIn         DateTime?
+  checkOut        DateTime?
+  status          AttendanceStatus @default(PRESENT)
+  workedMinutes   Int              @default(0)
+  overtimeMinutes Int              @default(0)
+  source          String           @default("manual") // kiosk | self | manual
+  note            String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@unique([employeeId, date])
+  @@index([date])
+  @@map("attendance")
+}
+
+model Holiday {
+  id   String   @id @default(uuid())
+  date DateTime @unique @db.Date
+  name String
+
+  @@map("holiday")
+}
+
+model LeaveType {
+  id          String         @id @default(uuid())
+  name        String         @unique
+  paid        Boolean        @default(true)
+  annualQuota Decimal        @default(0) @db.Decimal(6, 2)
+  requests    LeaveRequest[]
+  balances    LeaveBalance[]
+
+  @@map("leave_type")
+}
+
+model LeaveRequest {
+  id          String    @id @default(uuid())
+  employeeId  String
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveTypeId String
+  leaveType   LeaveType @relation(fields: [leaveTypeId], references: [id])
+  fromDate    DateTime  @db.Date
+  toDate      DateTime  @db.Date
+  days        Decimal   @db.Decimal(5, 2)
+  reason      String?
+  status      String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  approverId  String?
+  createdAt   DateTime  @default(now())
+
+  @@index([employeeId])
+  @@map("leave_request")
+}
+
+model LeaveBalance {
+  id          String    @id @default(uuid())
+  employeeId  String
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveTypeId String
+  leaveType   LeaveType @relation(fields: [leaveTypeId], references: [id])
+  year        Int
+  entitled    Decimal   @default(0) @db.Decimal(6, 2)
+  used        Decimal   @default(0) @db.Decimal(6, 2)
+
+  @@unique([employeeId, leaveTypeId, year])
+  @@map("leave_balance")
+}
+
+// ---------------------------------------------------------------------------
+// Inventory
+// ---------------------------------------------------------------------------
+
+enum ItemType {
+  PRODUCT
+  RAW_MATERIAL
+  SPARE_PART
+  SERVICE
+}
+
+model Uom {
+  id     String @id @default(uuid())
+  name   String @unique
+  symbol String
+  items  Item[]
+
+  @@map("uom")
+}
+
+model ItemCategory {
+  id       String         @id @default(uuid())
+  name     String
+  parentId String?
+  parent   ItemCategory?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children ItemCategory[] @relation("CategoryTree")
+  items    Item[]
+
+  @@map("item_category")
+}
+
+enum LocationType {
+  STORE
+  WORKSHOP
+  SCRAP
+}
+
+model Location {
+  id        String          @id @default(uuid())
+  name      String
+  type      LocationType    @default(STORE)
+  isActive  Boolean         @default(true)
+  levels    StockLevel[]
+  movements StockMovement[]
+  receipts  GoodsReceipt[]
+
+  @@map("location")
+}
+
+model Item {
+  id             String         @id @default(uuid())
+  sku            String         @unique
+  name           String
+  type           ItemType
+  uomId          String
+  uom            Uom            @relation(fields: [uomId], references: [id])
+  categoryId     String?
+  category       ItemCategory?  @relation(fields: [categoryId], references: [id])
+  hsnCode        String?
+  taxRate        Decimal        @default(0) @db.Decimal(6, 2)
+  salePrice      Decimal        @default(0) @db.Decimal(18, 4)
+  reorderLevel   Decimal        @default(0) @db.Decimal(18, 4)
+  isStockTracked Boolean        @default(true)
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  levels        StockLevel[]
+  movements     StockMovement[]
+  purchaseLines PurchaseOrderLine[]
+  invoiceLines  InvoiceLine[]
+
+  @@index([type])
+  @@map("item")
+}
+
+model StockLevel {
+  id         String   @id @default(uuid())
+  itemId     String
+  item       Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id])
+  quantity   Decimal  @default(0) @db.Decimal(18, 4)
+  avgCost    Decimal  @default(0) @db.Decimal(18, 4)
+
+  @@unique([itemId, locationId])
+  @@map("stock_level")
+}
+
+enum StockMovementType {
+  PURCHASE
+  SALE
+  ADJUSTMENT
+  TRANSFER
+  RETURN
+  PRODUCTION
+}
+
+model StockMovement {
+  id         String            @id @default(uuid())
+  itemId     String
+  item       Item              @relation(fields: [itemId], references: [id])
+  locationId String
+  location   Location          @relation(fields: [locationId], references: [id])
+  // signed: positive is stock-in, negative is stock-out
+  quantity   Decimal           @db.Decimal(18, 4)
+  unitCost   Decimal           @default(0) @db.Decimal(18, 4)
+  type       StockMovementType
+  refType    String?
+  refId      String?
+  note       String?
+  at         DateTime          @default(now())
+  byUserId   String?
+
+  @@index([itemId, locationId, at])
+  @@index([refType, refId])
+  @@map("stock_movement")
+}
+
+// ---------------------------------------------------------------------------
+// Purchasing
+// ---------------------------------------------------------------------------
+
+model Supplier {
+  id              String   @id @default(uuid())
+  name            String
+  contactName     String?
+  phone           String?
+  email           String?
+  address         String?
+  taxId           String?
+  paymentTermsDays Int     @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  purchaseOrders PurchaseOrder[]
+  bills          SupplierBill[]
+  payments       SupplierPayment[]
+
+  @@map("supplier")
+}
+
+enum PoStatus {
+  DRAFT
+  SENT
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CLOSED
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id         String              @id @default(uuid())
+  number     String              @unique
+  supplierId String
+  supplier   Supplier            @relation(fields: [supplierId], references: [id])
+  date       DateTime            @db.Date
+  expectedDate DateTime?         @db.Date
+  status     PoStatus            @default(DRAFT)
+  subtotal   Decimal             @default(0) @db.Decimal(18, 4)
+  taxTotal   Decimal             @default(0) @db.Decimal(18, 4)
+  total      Decimal             @default(0) @db.Decimal(18, 4)
+  createdAt  DateTime            @default(now())
+
+  lines    PurchaseOrderLine[]
+  receipts GoodsReceipt[]
+  bills    SupplierBill[]
+
+  @@map("purchase_order")
+}
+
+model PurchaseOrderLine {
+  id          String        @id @default(uuid())
+  poId        String
+  po          PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        Item          @relation(fields: [itemId], references: [id])
+  quantity    Decimal       @db.Decimal(18, 4)
+  rate        Decimal       @db.Decimal(18, 4)
+  taxRate     Decimal       @default(0) @db.Decimal(6, 2)
+  receivedQty Decimal       @default(0) @db.Decimal(18, 4)
+
+  receiptLines GoodsReceiptLine[]
+
+  @@index([poId])
+  @@map("purchase_order_line")
+}
+
+model GoodsReceipt {
+  id         String             @id @default(uuid())
+  number     String             @unique
+  poId       String
+  po         PurchaseOrder      @relation(fields: [poId], references: [id])
+  locationId String
+  location   Location           @relation(fields: [locationId], references: [id])
+  date       DateTime           @db.Date
+  createdAt  DateTime           @default(now())
+  lines      GoodsReceiptLine[]
+
+  @@map("goods_receipt")
+}
+
+model GoodsReceiptLine {
+  id       String            @id @default(uuid())
+  grnId    String
+  grn      GoodsReceipt      @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  poLineId String
+  poLine   PurchaseOrderLine @relation(fields: [poLineId], references: [id])
+  quantity Decimal           @db.Decimal(18, 4)
+  unitCost Decimal           @db.Decimal(18, 4)
+
+  @@map("goods_receipt_line")
+}
+
+enum BillStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+model SupplierBill {
+  id         String        @id @default(uuid())
+  number     String        @unique
+  supplierId String
+  supplier   Supplier      @relation(fields: [supplierId], references: [id])
+  poId       String?
+  po         PurchaseOrder? @relation(fields: [poId], references: [id])
+  date       DateTime      @db.Date
+  dueDate    DateTime?     @db.Date
+  subtotal   Decimal       @default(0) @db.Decimal(18, 4)
+  taxTotal   Decimal       @default(0) @db.Decimal(18, 4)
+  total      Decimal       @default(0) @db.Decimal(18, 4)
+  amountPaid Decimal       @default(0) @db.Decimal(18, 4)
+  status     BillStatus    @default(UNPAID)
+  journalEntryId String?
+  createdAt  DateTime      @default(now())
+
+  payments SupplierPayment[]
+
+  @@index([supplierId])
+  @@map("supplier_bill")
+}
+
+model SupplierPayment {
+  id         String       @id @default(uuid())
+  number     String       @unique
+  supplierId String
+  supplier   Supplier     @relation(fields: [supplierId], references: [id])
+  billId     String?
+  bill       SupplierBill? @relation(fields: [billId], references: [id])
+  date       DateTime     @db.Date
+  amount     Decimal      @db.Decimal(18, 4)
+  method     String       @default("BANK")
+  journalEntryId String?
+  createdAt  DateTime     @default(now())
+
+  @@index([supplierId])
+  @@map("supplier_payment")
+}
+
+// ---------------------------------------------------------------------------
+// Sales
+// ---------------------------------------------------------------------------
+
+model Customer {
+  id              String   @id @default(uuid())
+  name            String
+  contactName     String?
+  phone           String?
+  email           String?
+  billingAddress  String?
+  taxId           String?
+  creditTermsDays Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  invoices Invoice[]
+  receipts PaymentReceipt[]
+
+  @@map("customer")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  POSTED
+  PARTIALLY_PAID
+  PAID
+  VOID
+}
+
+model Invoice {
+  id         String        @id @default(uuid())
+  number     String?       @unique // assigned on posting
+  customerId String
+  customer   Customer      @relation(fields: [customerId], references: [id])
+  date       DateTime      @db.Date
+  dueDate    DateTime?     @db.Date
+  status     InvoiceStatus @default(DRAFT)
+  subtotal   Decimal       @default(0) @db.Decimal(18, 4)
+  taxTotal   Decimal       @default(0) @db.Decimal(18, 4)
+  total      Decimal       @default(0) @db.Decimal(18, 4)
+  amountPaid Decimal       @default(0) @db.Decimal(18, 4)
+  journalEntryId String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  lines       InvoiceLine[]
+  allocations PaymentAllocation[]
+
+  @@index([customerId])
+  @@map("invoice")
+}
+
+model InvoiceLine {
+  id          String  @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        Item    @relation(fields: [itemId], references: [id])
+  description String?
+  quantity    Decimal @db.Decimal(18, 4)
+  rate        Decimal @db.Decimal(18, 4)
+  discount    Decimal @default(0) @db.Decimal(18, 4)
+  taxRate     Decimal @default(0) @db.Decimal(6, 2)
+  lineTotal   Decimal @db.Decimal(18, 4)
+
+  @@index([invoiceId])
+  @@map("invoice_line")
+}
+
+model PaymentReceipt {
+  id         String              @id @default(uuid())
+  number     String              @unique
+  customerId String
+  customer   Customer            @relation(fields: [customerId], references: [id])
+  date       DateTime            @db.Date
+  amount     Decimal             @db.Decimal(18, 4)
+  method     String              @default("BANK")
+  journalEntryId String?
+  createdAt  DateTime            @default(now())
+  allocations PaymentAllocation[]
+
+  @@index([customerId])
+  @@map("payment_receipt")
+}
+
+model PaymentAllocation {
+  id        String         @id @default(uuid())
+  receiptId String
+  receipt   PaymentReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  invoiceId String
+  invoice   Invoice        @relation(fields: [invoiceId], references: [id])
+  amount    Decimal        @db.Decimal(18, 4)
+
+  @@map("payment_allocation")
+}
+
+// Add the back-relations needed by Item for purchasing/sales lines.
+
+// ---------------------------------------------------------------------------
+// Payroll
+// ---------------------------------------------------------------------------
+
+enum ComponentType {
+  EARNING
+  DEDUCTION
+}
+
+model SalaryComponent {
+  id      String        @id @default(uuid())
+  name    String        @unique
+  type    ComponentType
+  calc    String        @default("FIXED") // FIXED | PERCENT_OF_BASIC
+  taxable Boolean       @default(true)
+
+  structureLines SalaryStructureLine[]
+  payslipLines   PayslipLine[]
+
+  @@map("salary_component")
+}
+
+model SalaryStructure {
+  id            String                @id @default(uuid())
+  employeeId    String
+  employee      Employee              @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  effectiveFrom DateTime              @db.Date
+  isActive      Boolean               @default(true)
+  createdAt     DateTime              @default(now())
+  lines         SalaryStructureLine[]
+
+  @@index([employeeId])
+  @@map("salary_structure")
+}
+
+model SalaryStructureLine {
+  id          String          @id @default(uuid())
+  structureId String
+  structure   SalaryStructure @relation(fields: [structureId], references: [id], onDelete: Cascade)
+  componentId String
+  component   SalaryComponent @relation(fields: [componentId], references: [id])
+  amountOrRate Decimal        @db.Decimal(18, 4)
+
+  @@map("salary_structure_line")
+}
+
+enum PayrollStatus {
+  DRAFT
+  APPROVED
+  PAID
+}
+
+model PayrollRun {
+  id         String        @id @default(uuid())
+  period     String        @unique // YYYY-MM
+  status     PayrollStatus @default(DRAFT)
+  grossTotal Decimal       @default(0) @db.Decimal(18, 4)
+  netTotal   Decimal       @default(0) @db.Decimal(18, 4)
+  journalEntryId String?
+  approvedById String?
+  createdAt  DateTime      @default(now())
+  payslips   Payslip[]
+
+  @@map("payroll_run")
+}
+
+model Payslip {
+  id              String        @id @default(uuid())
+  runId           String
+  run             PayrollRun    @relation(fields: [runId], references: [id], onDelete: Cascade)
+  employeeId      String
+  employee        Employee      @relation(fields: [employeeId], references: [id])
+  paidDays        Decimal       @db.Decimal(5, 2)
+  lopDays         Decimal       @db.Decimal(5, 2)
+  overtimeMinutes Int           @default(0)
+  gross           Decimal       @default(0) @db.Decimal(18, 4)
+  totalDeductions Decimal       @default(0) @db.Decimal(18, 4)
+  net             Decimal       @default(0) @db.Decimal(18, 4)
+  lines           PayslipLine[]
+
+  @@unique([runId, employeeId])
+  @@map("payslip")
+}
+
+model PayslipLine {
+  id          String          @id @default(uuid())
+  payslipId   String
+  payslip     Payslip         @relation(fields: [payslipId], references: [id], onDelete: Cascade)
+  componentId String
+  component   SalaryComponent @relation(fields: [componentId], references: [id])
+  type        ComponentType
+  amount      Decimal         @db.Decimal(18, 4)
+
+  @@map("payslip_line")
 }

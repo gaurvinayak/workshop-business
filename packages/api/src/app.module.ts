@@ -4,10 +4,19 @@ import { JwtModule } from '@nestjs/jwt';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 
 import { PrismaModule } from './prisma/prisma.module';
+import { CommonModule } from './common/common.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AccountingModule } from './accounting/accounting.module';
 import { SetupModule } from './setup/setup.module';
+import { HrModule } from './hr/hr.module';
+import { AttendanceModule } from './attendance/attendance.module';
+import { InventoryModule } from './inventory/inventory.module';
+import { PurchasingModule } from './purchasing/purchasing.module';
+import { SalesModule } from './sales/sales.module';
+import { PayrollModule } from './payroll/payroll.module';
+import { ReportsModule } from './reports/reports.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { HealthController } from './health/health.controller';
 
 import { JwtAuthGuard } from './common/jwt-auth.guard';
@@ -20,10 +29,19 @@ import { AuditInterceptor } from './common/audit.interceptor';
     ConfigModule.forRoot({ isGlobal: true }),
     JwtModule.register({ global: true }),
     PrismaModule,
+    CommonModule,
     AuthModule,
     UsersModule,
     AccountingModule,
     SetupModule,
+    HrModule,
+    AttendanceModule,
+    InventoryModule,
+    PurchasingModule,
+    SalesModule,
+    PayrollModule,
+    ReportsModule,
+    DashboardModule,
   ],
   controllers: [HealthController],
   providers: [
