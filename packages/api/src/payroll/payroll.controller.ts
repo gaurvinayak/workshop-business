@@ -7,6 +7,8 @@ import {
   SetSalaryStructureInput,
   createPayrollRunSchema,
   CreatePayrollRunInput,
+  createAdvanceSchema,
+  CreateAdvanceInput,
 } from '@workshopos/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { RequirePermissions, CurrentUser, AuthUser } from '../common/decorators';
@@ -39,4 +41,11 @@ export class PayrollController {
 
   @Get('my/payslips') @RequirePermissions(PERMISSIONS.PAYSLIP_SELF)
   myPayslips(@CurrentUser() user: AuthUser) { return this.payroll.myPayslips(user.id); }
+
+  @Get('advances') @RequirePermissions(PERMISSIONS.PAYROLL_VIEW)
+  listAdvances(@Query('employeeId') employeeId?: string) { return this.payroll.listAdvances(employeeId); }
+  @Post('advances') @RequirePermissions(PERMISSIONS.PAYROLL_MANAGE)
+  giveAdvance(@Body(new ZodValidationPipe(createAdvanceSchema)) body: CreateAdvanceInput, @CurrentUser() user: AuthUser) {
+    return this.payroll.giveAdvance(body, user.id);
+  }
 }

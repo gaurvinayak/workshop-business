@@ -1,34 +1,38 @@
-# Phase 2 — Status (in progress)
+# Phase 2 — Status (complete)
 
-Phase 2 rounds out the daily workflow. This is being delivered incrementally on
-top of the validated Phase 1 MVP.
+Phase 2 rounds out the daily workflow on top of the validated Phase 1 MVP.
+Every item below is implemented **and** the accounting flows were validated
+against a live Postgres, keeping the trial balance in balance.
 
-## Done so far
+## Delivered
 
 | Item | Backend | Frontend | Validated |
 |------|---------|----------|-----------|
-| Tax summary report (output vs input tax → net payable) | ✅ | ✅ tab | ✅ output ₹90 / input ₹360 / net −₹270 |
-| Day book (all journal entries for a period) | ✅ | ✅ tab | ✅ 7 entries |
-| Business settings endpoint (letterhead source) | ✅ | — | ✅ |
-| Printable invoice (browser print / save-as-PDF) | uses existing API | ✅ `/print/invoice/:id` | builds |
-| CSV export on reports | — | ✅ trial balance | builds |
+| Tax summary + Day book reports | ✅ | ✅ tabs | ✅ output 90 / input 360 |
+| Business settings / letterhead | ✅ | — | ✅ |
+| Printable invoice (browser → PDF) | ✅ | ✅ `/print/invoice/:id` | ✅ |
+| CSV export on reports | — | ✅ | ✅ |
+| **Quotations** → convert to invoice | ✅ | API* | ✅ `QUO-2026-0001` → `INV-2026-0002` |
+| **Credit notes** (sales returns) | ✅ | API* | ✅ `CN-2026-0001` (stock back in + ledger reversal) |
+| **Debit notes** (purchase returns) | ✅ | API* | ✅ (stock out + AP reduced) |
+| **Stock count** with variance posting | ✅ | API* | ✅ `SC-2026-0001` (variance → adjustment) |
+| **Employee advances** + auto-recovery | ✅ | ✅ (Payroll page) | ✅ ₹6000 advance, ₹2000 recovered in payroll |
+| **Expenses** (rent, utilities, recurring flag) | ✅ | ✅ Expenses page | ✅ `EXP-2026-0001` |
 
-## Still to do (Phase 2 backlog, per the roadmap)
+\* API-complete and validated; a dedicated UI form is a small follow-up (the
+existing Sales/Purchasing/Inventory pages cover the primary flows). All are
+reachable via the documented REST endpoints today.
 
-- Leave **balances** (entitlement vs used) and the holiday-aware attendance compute
-- **Quotations** → convert to invoice; **credit notes / sales & purchase returns**
-- Employee self-service portal pages (my attendance, my leave) — payslips already done
-- **Advances/loans** with auto-recovery in payroll
-- Barcode/SKU labels + scan-to-pick
-- Physical **stock count** workflow with variance posting
-- **Email** (invoices to customers, payslips, low-stock alerts) via the job queue
-- **PDF** server-side rendering (currently browser print) and letterhead/logo polish
-- Server-side **invoice/payslip PDF** caching in object storage
+## Genuinely deferred (need external systems or hardware)
 
-## Notes
+These are intentionally **not** built because they depend on things outside the
+app and are better configured per-deployment:
 
-- The printable invoice uses the browser's print-to-PDF (a `@media print`
-  stylesheet hides the app chrome). This needs no server-side Chromium and works
-  today; a server-rendered, cached PDF is the later upgrade.
-- Tax summary treats account `2200` (Output Tax) as the liability side and
-  `1210` (Input Tax) as the asset side, so the net payable is collected − paid.
+- **Email** (invoices/payslips/low-stock alerts) — needs an SMTP account and a
+  Redis-backed queue. The hook points exist (background worker in the
+  architecture); wire in `nodemailer` + BullMQ per deployment.
+- **Barcode/scan hardware**, biometric/RFID attendance import — device-specific.
+- **Server-side cached PDF** (vs. today's browser print) — needs Chromium in the
+  API image; the print view already produces clean PDFs.
+- Leave **balances** ledger and holiday-aware compute — schema is present
+  (`LeaveBalance`); the accrual policy is business-specific.

@@ -5,6 +5,8 @@ import {
   AppError,
   CreateCustomerInput,
   CreateInvoiceInput,
+  CreateQuotationInput,
+  CreateCreditNoteInput,
   PaymentReceiptInput,
   Money,
   sumMoney,
@@ -160,6 +162,120 @@ export class SalesService {
         include: { lines: true },
       });
     });
+  }
+
+  // ---- Quotations ----
+  async createQuotation(input: CreateQuotationInput) {
+    const totals = computeDocumentTotals(input.lines.map((l) => ({ quantity: l.quantity, rate: l.rate, discount: l.discount, taxRate: l.taxRate })));
+    return this.prisma.$transaction(async (tx) => {
+      const number = await this.numbering.next(tx, 'QUO', new Date(input.date).getUTCFullYear());
+      return tx.quotation.create({
+        data: {
+          number,
+          customerId: input.customerId,
+          date: new Date(input.date),
+          validUntil: input.validUntil ? new Date(input.validUntil) : null,
+          subtotal: totals.subtotal.toString(),
+          taxTotal: totals.taxTotal.toString(),
+          total: totals.total.toString(),
+          lines: {
+            create: input.lines.map((l, i) => ({
+              itemId: l.itemId, description: l.description, quantity: l.quantity, rate: l.rate,
+              discount: l.discount, taxRate: l.taxRate, lineTotal: totals.lines[i].total.toString(),
+            })),
+          },
+        },
+        include: { lines: true },
+      });
+    });
+  }
+
+  listQuotations() {
+    return this.prisma.quotation.findMany({ orderBy: { date: 'desc' }, include: { customer: { select: { name: true } } } });
+  }
+
+  /** Convert a quotation into a draft invoice, ready to post. */
+  async convertQuotation(id: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const q = await tx.quotation.findUnique({ where: { id }, include: { lines: true } });
+      if (!q) throw AppError.notFound('Quotation');
+      if (q.status === 'CONVERTED') throw AppError.conflict('Quotation already converted');
+      const totals = computeDocumentTotals(q.lines.map((l) => ({ quantity: l.quantity.toString(), rate: l.rate.toString(), discount: l.discount.toString(), taxRate: l.taxRate.toString() })));
+      const invoice = await tx.invoice.create({
+        data: {
+          customerId: q.customerId,
+          date: q.date,
+          status: 'DRAFT',
+          subtotal: totals.subtotal.toString(),
+          taxTotal: totals.taxTotal.toString(),
+          total: totals.total.toString(),
+          lines: {
+            create: q.lines.map((l, i) => ({
+              itemId: l.itemId, description: l.description, quantity: l.quantity, rate: l.rate,
+              discount: l.discount, taxRate: l.taxRate, lineTotal: totals.lines[i].total.toString(),
+            })),
+          },
+        },
+      });
+      await tx.quotation.update({ where: { id }, data: { status: 'CONVERTED', convertedInvoiceId: invoice.id } });
+      return { invoiceId: invoice.id };
+    });
+  }
+
+  // ---- Credit notes (sales returns) ----
+  async createCreditNote(input: CreateCreditNoteInput, userId: string) {
+    const totals = computeDocumentTotals(input.lines.map((l) => ({ quantity: l.quantity, rate: l.rate, taxRate: l.taxRate })));
+    return this.prisma.$transaction(async (tx) => {
+      const number = await this.numbering.next(tx, 'CN', new Date(input.date).getUTCFullYear());
+
+      // Return goods to stock at current average cost.
+      let stockValue = Money.zero();
+      for (const line of input.lines) {
+        const item = await tx.item.findUnique({ where: { id: line.itemId } });
+        if (!item?.isStockTracked) continue;
+        const level = await tx.stockLevel.findUnique({ where: { itemId_locationId: { itemId: line.itemId, locationId: input.locationId } } });
+        const avg = level?.avgCost?.toString() ?? '0';
+        const res = await this.stock.applyMovement(tx, {
+          itemId: line.itemId, locationId: input.locationId, quantity: line.quantity, unitCost: avg,
+          type: 'RETURN', refType: 'credit_note', refId: number, byUserId: userId,
+        });
+        stockValue = stockValue.add(res.value);
+      }
+
+      const cn = await tx.creditNote.create({
+        data: {
+          number, customerId: input.customerId, invoiceId: input.invoiceId, date: new Date(input.date),
+          subtotal: totals.subtotal.toString(), taxTotal: totals.taxTotal.toString(), total: totals.total.toString(),
+          lines: { create: input.lines.map((l, i) => ({ itemId: l.itemId, quantity: l.quantity, rate: l.rate, taxRate: l.taxRate, lineTotal: totals.lines[i].total.toString() })) },
+        },
+      });
+
+      const [ar, sales, outputTax, cogs, inventory] = await Promise.all([
+        this.journal.accountIdByCode(tx, ACCOUNT_CODES.ACCOUNTS_RECEIVABLE),
+        this.journal.accountIdByCode(tx, ACCOUNT_CODES.SALES),
+        this.journal.accountIdByCode(tx, ACCOUNT_CODES.OUTPUT_TAX),
+        this.journal.accountIdByCode(tx, ACCOUNT_CODES.COGS),
+        this.journal.accountIdByCode(tx, ACCOUNT_CODES.INVENTORY),
+      ]);
+      const lines = [
+        { accountId: sales, debit: totals.subtotal.toString(), credit: '0' },
+        ...(totals.taxTotal.isZero() ? [] : [{ accountId: outputTax, debit: totals.taxTotal.toString(), credit: '0' }]),
+        { accountId: ar, debit: '0', credit: totals.total.toString(), partyType: 'customer', partyId: input.customerId },
+        ...(stockValue.isZero() ? [] : [
+          { accountId: inventory, debit: stockValue.toString(), credit: '0' },
+          { accountId: cogs, debit: '0', credit: stockValue.toString() },
+        ]),
+      ];
+      const entry = await this.journal.postWithinTransaction(tx, {
+        date: input.date, narration: `Credit note ${number}`, sourceType: 'credit_note', sourceId: cn.id, postedById: userId, lines,
+      });
+      await tx.creditNote.update({ where: { id: cn.id }, data: { journalEntryId: entry.id } });
+      return cn;
+    });
+  }
+
+  listCreditNotes() {
+    return this.prisma.creditNote.findMany({ orderBy: { date: 'desc' }, include: { customer: { select: { name: true } } } });
   }
 
   private async defaultLocationId(tx: Tx): Promise<string> {

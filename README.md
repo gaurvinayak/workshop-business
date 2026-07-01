@@ -3,7 +3,7 @@
 > Open-source business management software for small rig / workshop / fabrication businesses.
 > One place for attendance, payroll, inventory, purchasing, invoicing, and basic accounting.
 
-**Status:** Phase 1 (MVP) implemented and validated end-to-end — attendance, payroll, inventory, purchasing, invoicing, and accounting all working, with the double-entry ledger staying balanced across every transaction type. See [`docs/PHASE-1-STATUS.md`](docs/PHASE-1-STATUS.md) for what's built and how it was verified, and [`DEVELOPMENT.md`](DEVELOPMENT.md) to run it locally. Phase 2 refinements (PDFs, email, quotations, leave balances, self-service) follow per the [roadmap](docs/06-roadmap.md).
+**Status:** Phases 0–3 implemented and validated end-to-end. Attendance, payroll (with advances), inventory, purchasing, sales, **production/job costing**, **fixed assets & depreciation**, quotations, returns, expenses, and full accounting all work — with the double-entry ledger staying balanced across every transaction type (verified against a live database and in a real browser). See the phase status docs below. A few items that need external systems (email/SMTP, biometric hardware, e-filing formats) are scoped in [`docs/PHASE-3-STATUS.md`](docs/PHASE-3-STATUS.md). Run it locally with [`DEVELOPMENT.md`](DEVELOPMENT.md).
 
 ---
 
@@ -43,7 +43,8 @@ See [`docs/00-overview.md`](docs/00-overview.md) for the full build-vs-buy analy
 | [06 — Roadmap](docs/06-roadmap.md) | Phased delivery: MVP → v1 → v2, estimates, milestones |
 | [Phase 0 status](docs/PHASE-0-STATUS.md) | The foundation scaffold |
 | [Phase 1 status](docs/PHASE-1-STATUS.md) | The MVP — modules built and how they were validated |
-| [Phase 2 status](docs/PHASE-2-STATUS.md) | Workflow round-out: reports, printable invoices, CSV (in progress) |
+| [Phase 2 status](docs/PHASE-2-STATUS.md) | Workflow round-out: reports, printable invoices, quotations, returns, stock count, advances, expenses |
+| [Phase 3 status](docs/PHASE-3-STATUS.md) | Depth: production/job costing, fixed assets & depreciation |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | How to install, run, and develop locally |
 
 ## Quick mental model

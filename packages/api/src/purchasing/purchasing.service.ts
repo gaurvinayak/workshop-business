@@ -6,6 +6,7 @@ import {
   CreatePurchaseOrderInput,
   GoodsReceiptInput,
   SupplierPaymentInput,
+  CreateDebitNoteInput,
   Money,
   sumMoney,
   computeDocumentTotals,
@@ -236,5 +237,58 @@ export class PurchasingService {
       await tx.supplierPayment.update({ where: { id: payment.id }, data: { journalEntryId: entry.id } });
       return payment;
     });
+  }
+
+  // ---- Debit notes (purchase returns) ----
+  async createDebitNote(input: CreateDebitNoteInput, userId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const number = await this.numbering.next(tx, 'DN', new Date(input.date).getUTCFullYear());
+      let goodsValue = Money.zero();
+      let taxValue = Money.zero();
+      const lineData: { itemId: string; quantity: string; taxRate: string; lineTotal: string }[] = [];
+
+      for (const line of input.lines) {
+        // Return goods to the supplier: stock out at current average cost.
+        const res = await this.stock.applyMovement(tx, {
+          itemId: line.itemId, locationId: input.locationId,
+          quantity: Money.of(line.quantity).negate().toString(),
+          type: 'RETURN', refType: 'debit_note', refId: number, byUserId: userId,
+        });
+        const lineTax = res.value.percent(line.taxRate);
+        goodsValue = goodsValue.add(res.value);
+        taxValue = taxValue.add(lineTax);
+        lineData.push({ itemId: line.itemId, quantity: line.quantity, taxRate: line.taxRate, lineTotal: res.value.add(lineTax).toString() });
+      }
+
+      taxValue = taxValue.round();
+      const total = goodsValue.add(taxValue);
+      const dn = await tx.debitNote.create({
+        data: {
+          number, supplierId: input.supplierId, date: new Date(input.date), locationId: input.locationId,
+          subtotal: goodsValue.toString(), taxTotal: taxValue.toString(), total: total.toString(),
+          lines: { create: lineData },
+        },
+      });
+
+      const [ap, inventory, inputTax] = await Promise.all([
+        this.journal.accountIdByCode(tx, ACCOUNT_CODES.ACCOUNTS_PAYABLE),
+        this.journal.accountIdByCode(tx, ACCOUNT_CODES.INVENTORY),
+        this.journal.accountIdByCode(tx, ACCOUNT_CODES.INPUT_TAX),
+      ]);
+      const lines = [
+        { accountId: ap, debit: total.toString(), credit: '0', partyType: 'supplier', partyId: input.supplierId },
+        { accountId: inventory, debit: '0', credit: goodsValue.toString() },
+        ...(taxValue.isZero() ? [] : [{ accountId: inputTax, debit: '0', credit: taxValue.toString() }]),
+      ];
+      const entry = await this.journal.postWithinTransaction(tx, {
+        date: input.date, narration: `Debit note ${number}`, sourceType: 'debit_note', sourceId: dn.id, postedById: userId, lines,
+      });
+      await tx.debitNote.update({ where: { id: dn.id }, data: { journalEntryId: entry.id } });
+      return dn;
+    });
+  }
+
+  listDebitNotes() {
+    return this.prisma.debitNote.findMany({ orderBy: { date: 'desc' }, include: { supplier: { select: { name: true } } } });
   }
 }

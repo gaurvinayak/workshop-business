@@ -6,6 +6,7 @@ import {
   UpdateItemInput,
   StockAdjustmentInput,
   StockTransferInput,
+  CreateStockCountInput,
   Money,
   PaginationQuery,
   paginate,
@@ -13,6 +14,7 @@ import {
 } from '@workshopos/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { JournalService } from '../accounting/journal.service';
+import { NumberingService } from '../common/numbering.service';
 import { StockService } from './stock.service';
 
 function today(): string {
@@ -25,6 +27,7 @@ export class InventoryService {
     private readonly prisma: PrismaService,
     private readonly stock: StockService,
     private readonly journal: JournalService,
+    private readonly numbering: NumberingService,
   ) {}
 
   // ---- Reference data ----
@@ -174,6 +177,52 @@ export class InventoryService {
       }
       return result;
     });
+  }
+
+  /** Physical stock count: records counted vs system qty and posts variances. */
+  async stockCount(input: CreateStockCountInput, userId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const number = await this.numbering.next(tx, 'SC', new Date(input.date).getUTCFullYear());
+      let netValue = Money.zero(); // signed inventory value change
+      const lineData: { itemId: string; countedQty: string; systemQty: string }[] = [];
+
+      for (const line of input.lines) {
+        const level = await tx.stockLevel.findUnique({ where: { itemId_locationId: { itemId: line.itemId, locationId: input.locationId } } });
+        const systemQty = Money.of(level?.quantity?.toString() ?? '0');
+        const counted = Money.of(line.countedQty);
+        const variance = counted.subtract(systemQty);
+        lineData.push({ itemId: line.itemId, countedQty: line.countedQty, systemQty: systemQty.toString() });
+        if (variance.isZero()) continue;
+
+        const res = await this.stock.applyMovement(tx, {
+          itemId: line.itemId, locationId: input.locationId, quantity: variance.toString(),
+          unitCost: level?.avgCost?.toString() ?? '0', type: 'ADJUSTMENT',
+          refType: 'stock_count', refId: number, byUserId: userId, note: `Count ${number}`,
+        });
+        netValue = netValue.add(variance.isNegative() ? res.value.negate() : res.value);
+      }
+
+      const count = await tx.stockCount.create({
+        data: { number, locationId: input.locationId, date: new Date(input.date), status: 'POSTED', lines: { create: lineData } },
+      });
+
+      if (!netValue.isZero()) {
+        const inventory = await this.journal.accountIdByCode(tx, ACCOUNT_CODES.INVENTORY);
+        const adjustment = await this.journal.accountIdByCode(tx, ACCOUNT_CODES.INVENTORY_ADJUSTMENT);
+        const mag = netValue.isNegative() ? netValue.negate().toString() : netValue.toString();
+        await this.journal.postWithinTransaction(tx, {
+          date: input.date, narration: `Stock count ${number} variance`, sourceType: 'stock_count', sourceId: count.id, postedById: userId,
+          lines: netValue.isNegative()
+            ? [{ accountId: adjustment, debit: mag, credit: '0' }, { accountId: inventory, debit: '0', credit: mag }]
+            : [{ accountId: inventory, debit: mag, credit: '0' }, { accountId: adjustment, debit: '0', credit: mag }],
+        });
+      }
+      return count;
+    });
+  }
+
+  listStockCounts() {
+    return this.prisma.stockCount.findMany({ orderBy: { date: 'desc' }, include: { location: { select: { name: true } } } });
   }
 
   async transfer(input: StockTransferInput, userId: string) {

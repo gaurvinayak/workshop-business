@@ -18,6 +18,9 @@ import { PayrollModule } from './payroll/payroll.module';
 import { ReportsModule } from './reports/reports.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { SettingsModule } from './settings/settings.module';
+import { ExpensesModule } from './expenses/expenses.module';
+import { ProductionModule } from './production/production.module';
+import { AssetsModule } from './assets/assets.module';
 import { HealthController } from './health/health.controller';
 
 import { JwtAuthGuard } from './common/jwt-auth.guard';
@@ -44,6 +47,9 @@ import { AuditInterceptor } from './common/audit.interceptor';
     ReportsModule,
     DashboardModule,
     SettingsModule,
+    ExpensesModule,
+    ProductionModule,
+    AssetsModule,
   ],
   controllers: [HealthController],
   providers: [

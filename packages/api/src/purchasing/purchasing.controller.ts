@@ -9,6 +9,8 @@ import {
   GoodsReceiptInput,
   supplierPaymentSchema,
   SupplierPaymentInput,
+  createDebitNoteSchema,
+  CreateDebitNoteInput,
 } from '@workshopos/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { RequirePermissions, CurrentUser, AuthUser } from '../common/decorators';
@@ -43,5 +45,12 @@ export class PurchasingController {
   @Post('supplier-payments') @RequirePermissions(PERMISSIONS.PURCHASE_MANAGE)
   pay(@Body(new ZodValidationPipe(supplierPaymentSchema)) body: SupplierPaymentInput, @CurrentUser() user: AuthUser) {
     return this.purchasing.pay(body, user.id);
+  }
+
+  @Get('debit-notes') @RequirePermissions(PERMISSIONS.PURCHASE_VIEW)
+  listDebitNotes() { return this.purchasing.listDebitNotes(); }
+  @Post('debit-notes') @RequirePermissions(PERMISSIONS.PURCHASE_MANAGE)
+  createDebitNote(@Body(new ZodValidationPipe(createDebitNoteSchema)) body: CreateDebitNoteInput, @CurrentUser() user: AuthUser) {
+    return this.purchasing.createDebitNote(body, user.id);
   }
 }

@@ -287,6 +287,7 @@ model Employee {
   leaveBalances  LeaveBalance[]
   salaryStructs  SalaryStructure[]
   payslips       Payslip[]
+  advances       EmployeeAdvance[]
 
   @@map("employee")
 }
@@ -441,9 +442,11 @@ model Location {
   name      String
   type      LocationType    @default(STORE)
   isActive  Boolean         @default(true)
-  levels    StockLevel[]
-  movements StockMovement[]
-  receipts  GoodsReceipt[]
+  levels      StockLevel[]
+  movements   StockMovement[]
+  receipts    GoodsReceipt[]
+  stockCounts StockCount[]
+  workOrders  WorkOrder[]
 
   @@map("location")
 }
@@ -466,10 +469,16 @@ model Item {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  levels        StockLevel[]
-  movements     StockMovement[]
-  purchaseLines PurchaseOrderLine[]
-  invoiceLines  InvoiceLine[]
+  levels             StockLevel[]
+  movements          StockMovement[]
+  purchaseLines      PurchaseOrderLine[]
+  invoiceLines       InvoiceLine[]
+  quotationLines     QuotationLine[]
+  creditNoteLines    CreditNoteLine[]
+  debitNoteLines     DebitNoteLine[]
+  stockCountLines    StockCountLine[]
+  workOrderMaterials WorkOrderMaterial[]
+  workOrderOutputs   WorkOrderOutput[]
 
   @@index([type])
   @@map("item")
@@ -537,6 +546,8 @@ model Supplier {
   purchaseOrders PurchaseOrder[]
   bills          SupplierBill[]
   payments       SupplierPayment[]
+  debitNotes     DebitNote[]
+  expenses       Expense[]
 
   @@map("supplier")
 }
@@ -675,8 +686,10 @@ model Customer {
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
 
-  invoices Invoice[]
-  receipts PaymentReceipt[]
+  invoices    Invoice[]
+  receipts    PaymentReceipt[]
+  quotations  Quotation[]
+  creditNotes CreditNote[]
 
   @@map("customer")
 }
@@ -852,4 +865,262 @@ model PayslipLine {
   amount      Decimal         @db.Decimal(18, 4)
 
   @@map("payslip_line")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2 — quotations, returns, stock count, advances, expenses
+// ---------------------------------------------------------------------------
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  CONVERTED
+  EXPIRED
+}
+
+model Quotation {
+  id                 String          @id @default(uuid())
+  number             String          @unique
+  customerId         String
+  customer           Customer        @relation(fields: [customerId], references: [id])
+  date               DateTime        @db.Date
+  validUntil         DateTime?       @db.Date
+  status             QuotationStatus @default(DRAFT)
+  subtotal           Decimal         @default(0) @db.Decimal(18, 4)
+  taxTotal           Decimal         @default(0) @db.Decimal(18, 4)
+  total              Decimal         @default(0) @db.Decimal(18, 4)
+  convertedInvoiceId String?
+  createdAt          DateTime        @default(now())
+  lines              QuotationLine[]
+
+  @@map("quotation")
+}
+
+model QuotationLine {
+  id          String    @id @default(uuid())
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        Item      @relation(fields: [itemId], references: [id])
+  description String?
+  quantity    Decimal   @db.Decimal(18, 4)
+  rate        Decimal   @db.Decimal(18, 4)
+  discount    Decimal   @default(0) @db.Decimal(18, 4)
+  taxRate     Decimal   @default(0) @db.Decimal(6, 2)
+  lineTotal   Decimal   @db.Decimal(18, 4)
+
+  @@map("quotation_line")
+}
+
+// Sales return
+model CreditNote {
+  id             String           @id @default(uuid())
+  number         String           @unique
+  customerId     String
+  customer       Customer         @relation(fields: [customerId], references: [id])
+  invoiceId      String?
+  date           DateTime         @db.Date
+  subtotal       Decimal          @default(0) @db.Decimal(18, 4)
+  taxTotal       Decimal          @default(0) @db.Decimal(18, 4)
+  total          Decimal          @default(0) @db.Decimal(18, 4)
+  journalEntryId String?
+  createdAt      DateTime         @default(now())
+  lines          CreditNoteLine[]
+
+  @@map("credit_note")
+}
+
+model CreditNoteLine {
+  id           String     @id @default(uuid())
+  creditNoteId String
+  creditNote   CreditNote @relation(fields: [creditNoteId], references: [id], onDelete: Cascade)
+  itemId       String
+  item         Item       @relation(fields: [itemId], references: [id])
+  quantity     Decimal    @db.Decimal(18, 4)
+  rate         Decimal    @db.Decimal(18, 4)
+  taxRate      Decimal    @default(0) @db.Decimal(6, 2)
+  lineTotal    Decimal    @db.Decimal(18, 4)
+
+  @@map("credit_note_line")
+}
+
+// Purchase return
+model DebitNote {
+  id             String          @id @default(uuid())
+  number         String          @unique
+  supplierId     String
+  supplier       Supplier        @relation(fields: [supplierId], references: [id])
+  date           DateTime        @db.Date
+  locationId     String
+  subtotal       Decimal         @default(0) @db.Decimal(18, 4)
+  taxTotal       Decimal         @default(0) @db.Decimal(18, 4)
+  total          Decimal         @default(0) @db.Decimal(18, 4)
+  journalEntryId String?
+  createdAt      DateTime        @default(now())
+  lines          DebitNoteLine[]
+
+  @@map("debit_note")
+}
+
+model DebitNoteLine {
+  id          String    @id @default(uuid())
+  debitNoteId String
+  debitNote   DebitNote @relation(fields: [debitNoteId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        Item      @relation(fields: [itemId], references: [id])
+  quantity    Decimal   @db.Decimal(18, 4)
+  taxRate     Decimal   @default(0) @db.Decimal(6, 2)
+  lineTotal   Decimal   @db.Decimal(18, 4)
+
+  @@map("debit_note_line")
+}
+
+enum StockCountStatus {
+  DRAFT
+  POSTED
+}
+
+model StockCount {
+  id         String           @id @default(uuid())
+  number     String           @unique
+  locationId String
+  location   Location         @relation(fields: [locationId], references: [id])
+  date       DateTime         @db.Date
+  status     StockCountStatus @default(DRAFT)
+  createdAt  DateTime         @default(now())
+  lines      StockCountLine[]
+
+  @@map("stock_count")
+}
+
+model StockCountLine {
+  id           String     @id @default(uuid())
+  stockCountId String
+  stockCount   StockCount @relation(fields: [stockCountId], references: [id], onDelete: Cascade)
+  itemId       String
+  item         Item       @relation(fields: [itemId], references: [id])
+  countedQty   Decimal    @db.Decimal(18, 4)
+  systemQty    Decimal    @db.Decimal(18, 4)
+
+  @@map("stock_count_line")
+}
+
+model EmployeeAdvance {
+  id          String   @id @default(uuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date        DateTime @db.Date
+  amount      Decimal  @db.Decimal(18, 4)
+  installment Decimal  @db.Decimal(18, 4)
+  recovered   Decimal  @default(0) @db.Decimal(18, 4)
+  isActive    Boolean  @default(true)
+  note        String?
+  journalEntryId String?
+  createdAt   DateTime @default(now())
+
+  @@index([employeeId])
+  @@map("employee_advance")
+}
+
+model Expense {
+  id             String    @id @default(uuid())
+  number         String    @unique
+  date           DateTime  @db.Date
+  accountCode    String // which expense account to debit
+  description    String
+  amount         Decimal   @db.Decimal(18, 4)
+  taxAmount      Decimal   @default(0) @db.Decimal(18, 4)
+  method         String    @default("BANK") // CASH | BANK
+  supplierId     String?
+  supplier       Supplier? @relation(fields: [supplierId], references: [id])
+  recurring      Boolean   @default(false)
+  journalEntryId String?
+  createdAt      DateTime  @default(now())
+
+  @@map("expense")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 3 — production / work orders, fixed assets & depreciation
+// ---------------------------------------------------------------------------
+
+enum WorkOrderStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model WorkOrder {
+  id             String              @id @default(uuid())
+  number         String              @unique
+  description    String
+  locationId     String
+  location       Location            @relation(fields: [locationId], references: [id])
+  date           DateTime            @db.Date
+  status         WorkOrderStatus     @default(DRAFT)
+  laborCost      Decimal             @default(0) @db.Decimal(18, 4)
+  overheadCost   Decimal             @default(0) @db.Decimal(18, 4)
+  materialCost   Decimal             @default(0) @db.Decimal(18, 4)
+  outputValue    Decimal             @default(0) @db.Decimal(18, 4)
+  journalEntryId String?
+  createdAt      DateTime            @default(now())
+  materials      WorkOrderMaterial[]
+  outputs        WorkOrderOutput[]
+
+  @@map("work_order")
+}
+
+model WorkOrderMaterial {
+  id            String    @id @default(uuid())
+  workOrderId   String
+  workOrder     WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  itemId        String
+  item          Item      @relation(fields: [itemId], references: [id])
+  quantity      Decimal   @db.Decimal(18, 4)
+  consumedValue Decimal   @default(0) @db.Decimal(18, 4)
+
+  @@map("work_order_material")
+}
+
+model WorkOrderOutput {
+  id          String    @id @default(uuid())
+  workOrderId String
+  workOrder   WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        Item      @relation(fields: [itemId], references: [id])
+  quantity    Decimal   @db.Decimal(18, 4)
+  unitCost    Decimal   @default(0) @db.Decimal(18, 4)
+
+  @@map("work_order_output")
+}
+
+model FixedAsset {
+  id                      String             @id @default(uuid())
+  code                    String             @unique
+  name                    String
+  purchaseDate            DateTime           @db.Date
+  cost                    Decimal            @db.Decimal(18, 4)
+  salvageValue            Decimal            @default(0) @db.Decimal(18, 4)
+  usefulLifeMonths        Int
+  accumulatedDepreciation Decimal            @default(0) @db.Decimal(18, 4)
+  isActive                Boolean            @default(true)
+  createdAt               DateTime           @default(now())
+  depreciations           DepreciationEntry[]
+
+  @@map("fixed_asset")
+}
+
+model DepreciationEntry {
+  id             String     @id @default(uuid())
+  fixedAssetId   String
+  fixedAsset     FixedAsset @relation(fields: [fixedAssetId], references: [id], onDelete: Cascade)
+  period         String // YYYY-MM
+  amount         Decimal    @db.Decimal(18, 4)
+  journalEntryId String?
+  createdAt      DateTime   @default(now())
+
+  @@unique([fixedAssetId, period])
+  @@map("depreciation_entry")
 }

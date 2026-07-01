@@ -7,6 +7,10 @@ import {
   CreateInvoiceInput,
   paymentReceiptSchema,
   PaymentReceiptInput,
+  createQuotationSchema,
+  CreateQuotationInput,
+  createCreditNoteSchema,
+  CreateCreditNoteInput,
 } from '@workshopos/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { RequirePermissions, CurrentUser, AuthUser } from '../common/decorators';
@@ -37,5 +41,21 @@ export class SalesController {
   @Post('payment-receipts') @RequirePermissions(PERMISSIONS.SALES_MANAGE)
   receivePayment(@Body(new ZodValidationPipe(paymentReceiptSchema)) body: PaymentReceiptInput, @CurrentUser() user: AuthUser) {
     return this.sales.receivePayment(body, user.id);
+  }
+
+  // ---- Quotations ----
+  @Get('quotations') @RequirePermissions(PERMISSIONS.SALES_VIEW)
+  listQuotations() { return this.sales.listQuotations(); }
+  @Post('quotations') @RequirePermissions(PERMISSIONS.SALES_MANAGE)
+  createQuotation(@Body(new ZodValidationPipe(createQuotationSchema)) body: CreateQuotationInput) { return this.sales.createQuotation(body); }
+  @Post('quotations/:id/convert') @RequirePermissions(PERMISSIONS.SALES_MANAGE)
+  convertQuotation(@Param('id') id: string) { return this.sales.convertQuotation(id); }
+
+  // ---- Credit notes (sales returns) ----
+  @Get('credit-notes') @RequirePermissions(PERMISSIONS.SALES_VIEW)
+  listCreditNotes() { return this.sales.listCreditNotes(); }
+  @Post('credit-notes') @RequirePermissions(PERMISSIONS.SALES_MANAGE)
+  createCreditNote(@Body(new ZodValidationPipe(createCreditNoteSchema)) body: CreateCreditNoteInput, @CurrentUser() user: AuthUser) {
+    return this.sales.createCreditNote(body, user.id);
   }
 }

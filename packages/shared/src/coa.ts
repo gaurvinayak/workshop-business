@@ -24,6 +24,9 @@ export const ACCOUNT_CODES = {
   ACCOUNTS_RECEIVABLE: '1100',
   INVENTORY: '1200',
   INPUT_TAX: '1210',
+  EMPLOYEE_ADVANCES: '1300',
+  FIXED_ASSETS: '1500',
+  ACCUMULATED_DEPRECIATION: '1900',
   ACCOUNTS_PAYABLE: '2100',
   OUTPUT_TAX: '2200',
   SALARY_PAYABLE: '2300',
@@ -34,6 +37,8 @@ export const ACCOUNT_CODES = {
   COGS: '5100',
   SALARY_EXPENSE: '5200',
   INVENTORY_ADJUSTMENT: '5300',
+  DEPRECIATION_EXPENSE: '5500',
+  GENERAL_EXPENSE: '5900',
 } as const;
 
 export const DEFAULT_CHART_OF_ACCOUNTS: SeedAccount[] = [
@@ -44,6 +49,9 @@ export const DEFAULT_CHART_OF_ACCOUNTS: SeedAccount[] = [
   { code: '1100', name: 'Accounts Receivable', type: 'ASSET', parentCode: '1000', isPostable: true, system: true },
   { code: '1200', name: 'Inventory', type: 'ASSET', parentCode: '1000', isPostable: true, system: true },
   { code: '1210', name: 'Input Tax', type: 'ASSET', parentCode: '1000', isPostable: true, system: true },
+  { code: '1300', name: 'Employee Advances', type: 'ASSET', parentCode: '1000', isPostable: true, system: true },
+  { code: '1500', name: 'Fixed Assets', type: 'ASSET', parentCode: '1000', isPostable: true, system: true },
+  { code: '1900', name: 'Accumulated Depreciation', type: 'ASSET', parentCode: '1000', isPostable: true, system: true },
 
   // Liabilities
   { code: '2000', name: 'Liabilities', type: 'LIABILITY', parentCode: null, isPostable: false },
@@ -67,5 +75,6 @@ export const DEFAULT_CHART_OF_ACCOUNTS: SeedAccount[] = [
   { code: '5100', name: 'Cost of Goods Sold', type: 'EXPENSE', parentCode: '5000', isPostable: true, system: true },
   { code: '5200', name: 'Salary Expense', type: 'EXPENSE', parentCode: '5000', isPostable: true, system: true },
   { code: '5300', name: 'Inventory Adjustment', type: 'EXPENSE', parentCode: '5000', isPostable: true, system: true },
-  { code: '5900', name: 'Other Expense', type: 'EXPENSE', parentCode: '5000', isPostable: true },
+  { code: '5500', name: 'Depreciation Expense', type: 'EXPENSE', parentCode: '5000', isPostable: true, system: true },
+  { code: '5900', name: 'General Expense', type: 'EXPENSE', parentCode: '5000', isPostable: true, system: true },
 ];

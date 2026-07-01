@@ -12,6 +12,8 @@ import {
   StockAdjustmentInput,
   stockTransferSchema,
   StockTransferInput,
+  createStockCountSchema,
+  CreateStockCountInput,
   paginationQuerySchema,
   PaginationQuery,
 } from '@workshopos/shared';
@@ -69,5 +71,12 @@ export class InventoryController {
   @Post('stock/transfers') @RequirePermissions(PERMISSIONS.STOCK_MANAGE)
   transfer(@Body(new ZodValidationPipe(stockTransferSchema)) body: StockTransferInput, @CurrentUser() user: AuthUser) {
     return this.inventory.transfer(body, user.id);
+  }
+
+  @Get('stock/counts') @RequirePermissions(PERMISSIONS.STOCK_VIEW)
+  listCounts() { return this.inventory.listStockCounts(); }
+  @Post('stock/counts') @RequirePermissions(PERMISSIONS.STOCK_MANAGE)
+  count(@Body(new ZodValidationPipe(createStockCountSchema)) body: CreateStockCountInput, @CurrentUser() user: AuthUser) {
+    return this.inventory.stockCount(body, user.id);
   }
 }

@@ -68,6 +68,18 @@ export const PERMISSIONS = {
   CUSTOMER_MANAGE: 'customer.manage',
   SALES_VIEW: 'sales.view',
   SALES_MANAGE: 'sales.manage',
+
+  // expenses
+  EXPENSE_VIEW: 'expense.view',
+  EXPENSE_MANAGE: 'expense.manage',
+
+  // production / work orders
+  PRODUCTION_VIEW: 'production.view',
+  PRODUCTION_MANAGE: 'production.manage',
+
+  // fixed assets
+  ASSET_VIEW: 'asset.view',
+  ASSET_MANAGE: 'asset.manage',
 } as const;
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -88,11 +100,14 @@ export const ROLE_PERMISSIONS: Record<RoleCode, PermissionCode[]> = {
     P.ITEM_VIEW, P.STOCK_VIEW,
     P.SUPPLIER_VIEW, P.SUPPLIER_MANAGE, P.PURCHASE_VIEW, P.PURCHASE_MANAGE,
     P.CUSTOMER_VIEW, P.CUSTOMER_MANAGE, P.SALES_VIEW, P.SALES_MANAGE,
+    P.EXPENSE_VIEW, P.EXPENSE_MANAGE, P.ASSET_VIEW, P.ASSET_MANAGE,
+    P.PRODUCTION_VIEW,
   ],
   [ROLES.STORE]: [
     P.SETTINGS_VIEW,
     P.ITEM_VIEW, P.ITEM_MANAGE, P.STOCK_VIEW, P.STOCK_MANAGE,
     P.SUPPLIER_VIEW, P.PURCHASE_VIEW, P.PURCHASE_MANAGE,
+    P.PRODUCTION_VIEW, P.PRODUCTION_MANAGE,
   ],
   [ROLES.SUPERVISOR]: [
     P.SETTINGS_VIEW,

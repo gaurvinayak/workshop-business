@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { api } from '../lib/api';
 import { useApi, errMsg } from '../lib/useApi';
 import { useAuth } from '../lib/auth';
@@ -7,14 +7,29 @@ import { PERMISSIONS } from '@workshopos/shared';
 interface Run { id: string; period: string; status: string; grossTotal: string; netTotal: string; }
 interface Payslip { id: string; employee: { code: string; name: string }; paidDays: string; gross: string; totalDeductions: string; net: string; }
 interface RunDetail extends Run { payslips: Payslip[]; }
+interface Employee { id: string; code: string; name: string; }
+interface EmpPaged { data: Employee[]; }
+interface Advance { id: string; employee: { code: string; name: string }; amount: string; installment: string; recovered: string; isActive: boolean; }
 
 export default function Payroll() {
   const { can } = useAuth();
   const runs = useApi<Run[]>('/payroll/runs');
+  const employees = useApi<EmpPaged>('/employees?pageSize=200');
+  const advances = useApi<Advance[]>('/advances');
   const canManage = can(PERMISSIONS.PAYROLL_MANAGE);
   const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7));
   const [detail, setDetail] = useState<RunDetail | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [adv, setAdv] = useState({ employeeId: '', amount: '', installment: '', method: 'BANK' });
+
+  async function giveAdvance(e: FormEvent) {
+    e.preventDefault(); setErr(null);
+    try {
+      await api.post('/advances', { ...adv, date: new Date().toISOString().slice(0, 10) });
+      setAdv({ employeeId: '', amount: '', installment: '', method: 'BANK' });
+      advances.reload();
+    } catch (e2) { setErr(errMsg(e2)); }
+  }
 
   async function act(fn: () => Promise<unknown>) {
     setErr(null);
@@ -77,6 +92,41 @@ export default function Payroll() {
           </div>
         )}
       </div>
+
+      {canManage && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, marginTop: 16 }}>
+          <form className="card" onSubmit={giveAdvance}>
+            <h3 style={{ marginTop: 0 }}>Give advance / loan</h3>
+            <label>Employee</label>
+            <select value={adv.employeeId} onChange={(e) => setAdv({ ...adv, employeeId: e.target.value })} required>
+              <option value="">— select —</option>
+              {employees.data?.data.map((e) => <option key={e.id} value={e.id}>{e.code} {e.name}</option>)}
+            </select>
+            <div className="row">
+              <div><label>Amount</label><input value={adv.amount} onChange={(e) => setAdv({ ...adv, amount: e.target.value })} required /></div>
+              <div><label>Monthly installment</label><input value={adv.installment} onChange={(e) => setAdv({ ...adv, installment: e.target.value })} required /></div>
+            </div>
+            <button type="submit">Give advance</button>
+            <p className="muted" style={{ fontSize: 12 }}>Auto-recovered from future payroll runs.</p>
+          </form>
+
+          <div className="card">
+            <h3 style={{ marginTop: 0 }}>Advances</h3>
+            <table>
+              <thead><tr><th>Employee</th><th className="num">Amount</th><th className="num">Installment</th><th className="num">Recovered</th><th>Status</th></tr></thead>
+              <tbody>
+                {advances.data?.map((a) => (
+                  <tr key={a.id}>
+                    <td>{a.employee.code} {a.employee.name}</td><td className="num">{a.amount}</td><td className="num">{a.installment}</td>
+                    <td className="num">{a.recovered}</td><td className="muted">{a.isActive ? 'active' : 'cleared'}</td>
+                  </tr>
+                ))}
+                {!advances.data?.length && <tr><td colSpan={5} className="muted">No advances.</td></tr>}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   AppError,
   CreateSalaryComponentInput,
   SetSalaryStructureInput,
+  CreateAdvanceInput,
   Money,
   prorate,
 } from '@workshopos/shared';
@@ -14,6 +15,7 @@ import { JournalService } from '../accounting/journal.service';
 type Tx = Prisma.TransactionClient;
 
 const PAID_STATUSES = new Set(['PRESENT', 'HOLIDAY', 'WEEKLY_OFF', 'LEAVE']);
+const ADVANCE_COMPONENT = 'Advance Recovery';
 
 @Injectable()
 export class PayrollService {
@@ -73,6 +75,8 @@ export class PayrollService {
         include: { salaryStructs: { where: { isActive: true }, include: { lines: { include: { component: true } } } } },
       });
 
+      const advanceComponentId = await this.ensureAdvanceComponent(tx);
+
       let grossTotal = Money.zero();
       let netTotal = Money.zero();
 
@@ -113,6 +117,20 @@ export class PayrollService {
           else deductions = deductions.add(amount);
         }
 
+        // Recover outstanding advances (capped at the remaining balance).
+        const advances = await tx.employeeAdvance.findMany({ where: { employeeId: emp.id, isActive: true } });
+        let recovery = Money.zero();
+        for (const a of advances) {
+          const remaining = Money.of(a.amount.toString()).subtract(a.recovered.toString());
+          const inst = Money.of(a.installment.toString());
+          const take = inst.compare(remaining) <= 0 ? inst : remaining;
+          if (!take.isNegative() && !take.isZero()) recovery = recovery.add(take);
+        }
+        if (!recovery.isZero()) {
+          payslipLines.push({ componentId: advanceComponentId, type: 'DEDUCTION', amount: recovery.toString() });
+          deductions = deductions.add(recovery);
+        }
+
         const net = gross.subtract(deductions);
         grossTotal = grossTotal.add(gross);
         netTotal = netTotal.add(net);
@@ -148,10 +166,19 @@ export class PayrollService {
       const net = Money.of(run.netTotal.toString());
       const deductions = gross.subtract(net);
 
-      const [expense, salaryPayable, statutoryPayable] = await Promise.all([
+      // Split deductions: advance recovery credits the advances asset, the rest
+      // credits statutory payable.
+      const advanceComponentId = await this.ensureAdvanceComponent(tx);
+      const advLines = await tx.payslipLine.findMany({ where: { componentId: advanceComponentId, payslip: { runId } }, include: { payslip: true } });
+      let advanceRecovery = Money.zero();
+      for (const l of advLines) advanceRecovery = advanceRecovery.add(l.amount.toString());
+      const statutory = deductions.subtract(advanceRecovery);
+
+      const [expense, salaryPayable, statutoryPayable, advancesAcc] = await Promise.all([
         this.journal.accountIdByCode(tx, ACCOUNT_CODES.SALARY_EXPENSE),
         this.journal.accountIdByCode(tx, ACCOUNT_CODES.SALARY_PAYABLE),
         this.journal.accountIdByCode(tx, ACCOUNT_CODES.STATUTORY_PAYABLE),
+        this.journal.accountIdByCode(tx, ACCOUNT_CODES.EMPLOYEE_ADVANCES),
       ]);
 
       const entry = await this.journal.postWithinTransaction(tx, {
@@ -162,10 +189,25 @@ export class PayrollService {
         postedById: userId,
         lines: [
           { accountId: expense, debit: gross.toString(), credit: '0' },
-          ...(deductions.isZero() ? [] : [{ accountId: statutoryPayable, debit: '0', credit: deductions.toString() }]),
+          ...(statutory.isZero() ? [] : [{ accountId: statutoryPayable, debit: '0', credit: statutory.toString() }]),
+          ...(advanceRecovery.isZero() ? [] : [{ accountId: advancesAcc, debit: '0', credit: advanceRecovery.toString() }]),
           { accountId: salaryPayable, debit: '0', credit: net.toString() },
         ],
       });
+
+      // Settle the advances against each employee's recovered amount.
+      for (const l of advLines) {
+        let left = Money.of(l.amount.toString());
+        const advances = await tx.employeeAdvance.findMany({ where: { employeeId: l.payslip.employeeId, isActive: true }, orderBy: { date: 'asc' } });
+        for (const a of advances) {
+          if (left.isZero() || left.isNegative()) break;
+          const remaining = Money.of(a.amount.toString()).subtract(a.recovered.toString());
+          const applied = left.compare(remaining) <= 0 ? left : remaining;
+          const newRecovered = Money.of(a.recovered.toString()).add(applied);
+          await tx.employeeAdvance.update({ where: { id: a.id }, data: { recovered: newRecovered.toString(), isActive: newRecovered.compare(a.amount.toString()) < 0 } });
+          left = left.subtract(applied);
+        }
+      }
 
       return tx.payrollRun.update({ where: { id: runId }, data: { status: 'APPROVED', approvedById: userId, journalEntryId: entry.id } });
     });
@@ -210,6 +252,47 @@ export class PayrollService {
     });
     if (!run) throw AppError.notFound('Payroll run');
     return run;
+  }
+
+  private async ensureAdvanceComponent(tx: Tx): Promise<string> {
+    const comp = await tx.salaryComponent.upsert({
+      where: { name: ADVANCE_COMPONENT },
+      update: {},
+      create: { name: ADVANCE_COMPONENT, type: 'DEDUCTION', calc: 'FIXED', taxable: false },
+    });
+    return comp.id;
+  }
+
+  /** Give an advance/loan to an employee; posts Dr Employee Advances, Cr cash/bank. */
+  async giveAdvance(input: CreateAdvanceInput, userId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const advance = await tx.employeeAdvance.create({
+        data: {
+          employeeId: input.employeeId, date: new Date(input.date), amount: input.amount,
+          installment: input.installment, note: input.note,
+        },
+      });
+      const [advancesAcc, cashOrBank] = await Promise.all([
+        this.journal.accountIdByCode(tx, ACCOUNT_CODES.EMPLOYEE_ADVANCES),
+        this.journal.accountIdByCode(tx, input.method === 'CASH' ? ACCOUNT_CODES.CASH : ACCOUNT_CODES.BANK),
+      ]);
+      const entry = await this.journal.postWithinTransaction(tx, {
+        date: input.date, narration: `Advance to employee`, sourceType: 'employee_advance', sourceId: advance.id, postedById: userId,
+        lines: [
+          { accountId: advancesAcc, debit: input.amount, credit: '0', partyType: 'employee', partyId: input.employeeId },
+          { accountId: cashOrBank, debit: '0', credit: input.amount },
+        ],
+      });
+      return tx.employeeAdvance.update({ where: { id: advance.id }, data: { journalEntryId: entry.id } });
+    });
+  }
+
+  listAdvances(employeeId?: string) {
+    return this.prisma.employeeAdvance.findMany({
+      where: { employeeId },
+      orderBy: { date: 'desc' },
+      include: { employee: { select: { code: true, name: true } } },
+    });
   }
 
   /** Payslips for the logged-in employee. */

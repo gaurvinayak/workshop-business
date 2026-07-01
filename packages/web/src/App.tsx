@@ -16,6 +16,9 @@ import Sales from './routes/Sales';
 import Payroll from './routes/Payroll';
 import Reports from './routes/Reports';
 import InvoicePrint from './routes/InvoicePrint';
+import Production from './routes/Production';
+import Expenses from './routes/Expenses';
+import Assets from './routes/Assets';
 
 interface NavItem { to: string; label: string; perm?: PermissionCode; element: JSX.Element; }
 
@@ -26,6 +29,9 @@ const NAV: NavItem[] = [
   { to: '/inventory', label: 'Inventory', perm: PERMISSIONS.ITEM_VIEW, element: <Inventory /> },
   { to: '/purchasing', label: 'Purchasing', perm: PERMISSIONS.PURCHASE_VIEW, element: <Purchasing /> },
   { to: '/sales', label: 'Sales', perm: PERMISSIONS.SALES_VIEW, element: <Sales /> },
+  { to: '/production', label: 'Production', perm: PERMISSIONS.PRODUCTION_VIEW, element: <Production /> },
+  { to: '/expenses', label: 'Expenses', perm: PERMISSIONS.EXPENSE_VIEW, element: <Expenses /> },
+  { to: '/assets', label: 'Fixed Assets', perm: PERMISSIONS.ASSET_VIEW, element: <Assets /> },
   { to: '/payroll', label: 'Payroll', perm: PERMISSIONS.PAYROLL_VIEW, element: <Payroll /> },
   { to: '/accounts', label: 'Chart of Accounts', perm: PERMISSIONS.ACCOUNT_VIEW, element: <Accounts /> },
   { to: '/journal', label: 'Journal', perm: PERMISSIONS.JOURNAL_VIEW, element: <Journal /> },
