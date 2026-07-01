@@ -69,6 +69,8 @@ Out of the box it uses simple built‑in passwords so it "just works" on your ow
 | ![Inventory](docs/screenshots/05-inventory.png) | ![Reports](docs/screenshots/15-reports-pl.png) |
 | **Payroll** — runs, payslips, advances | **Help & Guide** — built‑in user manual |
 | ![Payroll](docs/screenshots/11-payroll.png) | ![Help](docs/screenshots/14-help.png) |
+| **Users & Roles** — add staff logins, assign roles | |
+| ![Users](docs/screenshots/17-users.png) | |
 
 More in [`docs/screenshots/`](docs/screenshots/) — employees, attendance, purchasing, production, fixed assets, the chart of accounts, and the light theme.
 

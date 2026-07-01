@@ -16,6 +16,7 @@ import Purchasing from './routes/Purchasing';
 import Sales from './routes/Sales';
 import Payroll from './routes/Payroll';
 import Reports from './routes/Reports';
+import Users from './routes/Users';
 import InvoicePrint from './routes/InvoicePrint';
 import Production from './routes/Production';
 import Expenses from './routes/Expenses';
@@ -38,6 +39,7 @@ const NAV: NavItem[] = [
   { to: '/accounts', label: 'Chart of Accounts', perm: PERMISSIONS.ACCOUNT_VIEW, element: <Accounts /> },
   { to: '/journal', label: 'Journal', perm: PERMISSIONS.JOURNAL_VIEW, element: <Journal /> },
   { to: '/reports', label: 'Reports', perm: PERMISSIONS.REPORT_VIEW, element: <Reports /> },
+  { to: '/users', label: 'Users & Roles', perm: PERMISSIONS.USER_VIEW, element: <Users /> },
   { to: '/help', label: 'Help & Guide', element: <Help /> },
 ];
 
