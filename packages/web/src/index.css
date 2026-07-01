@@ -270,6 +270,33 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-fam
 .badge.primary { background: var(--primary-weak); color: var(--primary); }
 .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
+/* ---- Theme toggle ---- */
+.theme-toggle {
+  margin-top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  justify-content: flex-start;
+  padding: 7px 12px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+.theme-toggle:hover { background: var(--surface-3); color: var(--text); }
+.theme-toggle-floating {
+  position: fixed;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: auto;
+  z-index: 10;
+  box-shadow: var(--shadow-1);
+}
+.theme-toggle-label { font-size: var(--text-sm); }
+
 /* ---- Money semantics ---- */
 .pos { color: var(--pos); font-variant-numeric: tabular-nums; }
 .neg { color: var(--neg); font-variant-numeric: tabular-nums; }

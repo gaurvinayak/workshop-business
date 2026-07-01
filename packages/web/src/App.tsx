@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, NavLink, useNavigate } from 'react-router-dom'
 import { PERMISSIONS, PermissionCode } from '@workshopos/shared';
 import { api } from './lib/api';
 import { useAuth } from './lib/auth';
+import { ThemeToggle } from './components/ThemeToggle';
 import Login from './routes/Login';
 import Setup from './routes/Setup';
 import Dashboard from './routes/Dashboard';
@@ -52,7 +53,8 @@ function Shell() {
             <NavLink key={n.to} to={n.to} end={n.to === '/'}>{n.label}</NavLink>
           ))}
         </nav>
-        <div style={{ marginTop: 24 }}>
+        <div style={{ marginTop: 'auto', paddingTop: 24 }}>
+          <div style={{ padding: '0 12px 8px' }}><ThemeToggle /></div>
           <div className="muted" style={{ fontSize: 12, padding: '0 12px' }}>{user?.email}</div>
           <button className="secondary" style={{ margin: '8px 12px' }} onClick={() => logout().then(() => navigate('/login'))}>Sign out</button>
         </div>
@@ -80,19 +82,25 @@ export default function App() {
 
   if (!isSetup) {
     return (
-      <Routes>
-        <Route path="/setup" element={<Setup onDone={() => setIsSetup(true)} />} />
-        <Route path="*" element={<Navigate to="/setup" replace />} />
-      </Routes>
+      <>
+        <ThemeToggle variant="floating" />
+        <Routes>
+          <Route path="/setup" element={<Setup onDone={() => setIsSetup(true)} />} />
+          <Route path="*" element={<Navigate to="/setup" replace />} />
+        </Routes>
+      </>
     );
   }
 
   if (!user) {
     return (
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
+      <>
+        <ThemeToggle variant="floating" />
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </>
     );
   }
 
