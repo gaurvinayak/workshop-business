@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { api } from '../lib/api';
 import { useApi, errMsg } from '../lib/useApi';
 import { useAuth } from '../lib/auth';
+import { money } from '../lib/format';
 import { PERMISSIONS } from '@workshopos/shared';
 
 interface Supplier { id: string; name: string; }
@@ -106,7 +107,7 @@ export default function Purchasing() {
             {pos.data?.map((p) => (
               <tr key={p.id}>
                 <td>{p.number}</td><td>{p.supplier.name}</td><td>{p.date.slice(0, 10)}</td>
-                <td className="muted">{p.status}</td><td className="num">{p.total}</td>
+                <td><span className={`badge ${p.status === 'RECEIVED' ? 'success' : p.status === 'PARTIALLY_RECEIVED' ? 'info' : p.status === 'CANCELLED' ? 'danger' : 'warning'}`}>{p.status.replace('_', ' ')}</span></td><td className="num">{money(p.total)}</td>
                 <td>{canManage && p.status !== 'RECEIVED' && <button className="secondary" style={{ margin: 0, padding: '4px 10px' }} onClick={() => receive(p.id)}>Receive</button>}</td>
               </tr>
             ))}

@@ -20,6 +20,7 @@ import InvoicePrint from './routes/InvoicePrint';
 import Production from './routes/Production';
 import Expenses from './routes/Expenses';
 import Assets from './routes/Assets';
+import Help from './routes/Help';
 
 interface NavItem { to: string; label: string; perm?: PermissionCode; element: JSX.Element; }
 
@@ -37,6 +38,7 @@ const NAV: NavItem[] = [
   { to: '/accounts', label: 'Chart of Accounts', perm: PERMISSIONS.ACCOUNT_VIEW, element: <Accounts /> },
   { to: '/journal', label: 'Journal', perm: PERMISSIONS.JOURNAL_VIEW, element: <Journal /> },
   { to: '/reports', label: 'Reports', perm: PERMISSIONS.REPORT_VIEW, element: <Reports /> },
+  { to: '/help', label: 'Help & Guide', element: <Help /> },
 ];
 
 function Shell() {

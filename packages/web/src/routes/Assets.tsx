@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { api } from '../lib/api';
 import { useApi, errMsg } from '../lib/useApi';
 import { useAuth } from '../lib/auth';
+import { money } from '../lib/format';
 import { PERMISSIONS } from '@workshopos/shared';
 
 interface Asset { id: string; code: string; name: string; cost: string; usefulLifeMonths: number; accumulatedDepreciation: string; }
@@ -75,9 +76,9 @@ export default function Assets() {
           <tbody>
             {assets.data?.map((a) => (
               <tr key={a.id}>
-                <td>{a.code}</td><td>{a.name}</td><td className="num">{a.cost}</td><td className="num">{a.usefulLifeMonths}</td>
-                <td className="num">{a.accumulatedDepreciation}</td>
-                <td className="num">{(Number(a.cost) - Number(a.accumulatedDepreciation)).toFixed(2)}</td>
+                <td>{a.code}</td><td>{a.name}</td><td className="num">{money(a.cost)}</td><td className="num">{a.usefulLifeMonths}</td>
+                <td className="num">{money(a.accumulatedDepreciation)}</td>
+                <td className="num">{money(Number(a.cost) - Number(a.accumulatedDepreciation))}</td>
               </tr>
             ))}
             {!assets.data?.length && <tr><td colSpan={6} className="muted">No assets yet.</td></tr>}

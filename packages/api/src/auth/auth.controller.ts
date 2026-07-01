@@ -5,19 +5,24 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe';
 import { Public, CurrentUser, AuthUser } from '../common/decorators';
 import { AuthService, AuthResult } from './auth.service';
 
-const isProd = process.env.NODE_ENV === 'production';
+// Secure cookies by default in production, but allow an explicit override so a
+// local self-host over plain http://localhost still works (set COOKIE_SECURE=false).
+const secureCookies =
+  process.env.COOKIE_SECURE !== undefined
+    ? process.env.COOKIE_SECURE === 'true'
+    : process.env.NODE_ENV === 'production';
 
 function setAuthCookies(res: Response, result: AuthResult) {
   res.cookie('access_token', result.accessToken, {
     httpOnly: true,
-    secure: isProd,
+    secure: secureCookies,
     sameSite: 'lax',
     maxAge: Number(process.env.JWT_ACCESS_TTL ?? 900) * 1000,
     path: '/',
   });
   res.cookie('refresh_token', result.refreshToken, {
     httpOnly: true,
-    secure: isProd,
+    secure: secureCookies,
     sameSite: 'lax',
     maxAge: Number(process.env.JWT_REFRESH_TTL ?? 60 * 60 * 24 * 30) * 1000,
     path: '/api/v1/auth',

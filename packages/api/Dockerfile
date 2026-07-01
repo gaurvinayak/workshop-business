@@ -25,5 +25,5 @@ COPY --from=build /app/packages/api/package.json ./packages/api/package.json
 COPY --from=build /app/packages/api/prisma ./packages/api/prisma
 WORKDIR /app/packages/api
 EXPOSE 3000
-# Run pending migrations then start the API.
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+# Apply migrations, seed reference data (idempotent), then start the API.
+CMD ["sh", "-c", "npx prisma migrate deploy && (npx prisma db seed || echo 'seed step skipped') && node dist/main.js"]

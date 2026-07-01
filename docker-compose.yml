@@ -1,19 +1,25 @@
-# Production-ish single-host stack. For local dev you typically run Postgres +
-# Redis here and the api/web with `npm run dev` for hot reload (see
-# docker-compose.dev.yml). All secrets come from the .env file.
+# One-command WorkshopOS. From the project folder, run:
+#
+#     docker compose up -d --build
+#
+# then open http://localhost:8080 in your browser.
+#
+# It works out of the box with the safe local defaults below. For a real,
+# internet-facing deployment, copy .env.example to .env and set strong secrets
+# (see README) — those values override the defaults here.
 
 services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-workshopos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-workshopos}
+      POSTGRES_DB: ${POSTGRES_DB:-workshopos}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-workshopos}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,17 +40,19 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-workshopos}:${POSTGRES_PASSWORD:-workshopos}@postgres:5432/${POSTGRES_DB:-workshopos}?schema=public
       REDIS_URL: redis://redis:6379
       API_PORT: 3000
-      WEB_ORIGIN: ${WEB_ORIGIN}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL}
-      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL}
-      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY}
-    ports:
-      - '3000:3000'
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:8080}
+      # Plain http://localhost needs non-secure cookies. Set true behind HTTPS.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-local-dev-access-secret-change-me-32chars}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-local-dev-refresh-secret-change-me-32chars}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-900}
+      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-2592000}
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:-local-dev-field-encryption-key-32bytes!!}
+    expose:
+      - '3000'
 
   web:
     build:

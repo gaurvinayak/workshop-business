@@ -3,7 +3,74 @@
 > Open-source business management software for small rig / workshop / fabrication businesses.
 > One place for attendance, payroll, inventory, purchasing, invoicing, and basic accounting.
 
-**Status:** Phases 0–3 implemented and validated end-to-end. Attendance, payroll (with advances), inventory, purchasing, sales, **production/job costing**, **fixed assets & depreciation**, quotations, returns, expenses, and full accounting all work — with the double-entry ledger staying balanced across every transaction type (verified against a live database and in a real browser). See the phase status docs below. A few items that need external systems (email/SMTP, biometric hardware, e-filing formats) are scoped in [`docs/PHASE-3-STATUS.md`](docs/PHASE-3-STATUS.md). Run it locally with [`DEVELOPMENT.md`](DEVELOPMENT.md).
+**Status:** Phases 0–3 implemented and validated end-to-end. Attendance, payroll (with advances), inventory, purchasing, sales, **production/job costing**, **fixed assets & depreciation**, quotations, returns, expenses, and full accounting all work — with the double-entry ledger staying balanced across every transaction type (verified against a live database and in a real browser). See the phase status docs below. A few items that need external systems (email/SMTP, biometric hardware, e-filing formats) are scoped in [`docs/PHASE-3-STATUS.md`](docs/PHASE-3-STATUS.md).
+
+---
+
+## 🚀 Run it yourself — no coding needed (about 10 minutes)
+
+You do **not** need to be a programmer. If you can install an app and copy‑paste one line, you can run WorkshopOS on your own computer or office server.
+
+### Step 1 — Install Docker Desktop (one time)
+
+Docker is a free program that runs WorkshopOS for you in the background.
+
+- **Windows or Mac:** download and install **Docker Desktop** from <https://www.docker.com/products/docker-desktop/>, then open it once so it's running (you'll see a small whale icon).
+- **Linux:** install **Docker Engine** and the **Compose plugin** from <https://docs.docker.com/engine/install/>.
+
+### Step 2 — Get the WorkshopOS files
+
+On the project's GitHub page, click the green **Code** button → **Download ZIP**, then unzip it. (Or, if you know git: `git clone <repo-url>`.)
+
+### Step 3 — Start it
+
+Open a terminal — **PowerShell** on Windows, or **Terminal** on Mac/Linux — go into the unzipped folder, and run this one line:
+
+```bash
+docker compose up -d --build
+```
+
+The **first** time takes about 5–10 minutes while it downloads and builds everything (later starts take seconds). When it finishes, it keeps running in the background.
+
+### Step 4 — Open it in your browser
+
+Go to **<http://localhost:8080>**. You'll see a short **setup wizard** — enter your business name, your currency and timezone, your financial year, and create your owner login. That's it — you're in. 🎉
+
+New to it? Every screen is explained inside the app under **Help & Guide** in the menu.
+
+### Everyday commands
+
+| I want to… | Run this in the project folder |
+|------------|-------------------------------|
+| Stop it (your data is kept) | `docker compose down` |
+| Start it again | `docker compose up -d` |
+| See it's running | open <http://localhost:8080> |
+| Update to a newer version | download the new files, then `docker compose up -d --build` |
+
+Your data lives safely in Docker even when it's stopped. To **back up**, copy the Docker volume `pgdata` (your accountant or IT person can do this in seconds), or export reports to CSV from the **Reports** page.
+
+### A note on safety
+Out of the box it uses simple built‑in passwords so it "just works" on your own machine. **If you ever put it on the internet** (so staff can reach it from home), first set strong secrets and enable HTTPS — copy `.env.example` to `.env` and follow the notes there and in [`docs/05-security-and-ops.md`](docs/05-security-and-ops.md). For a single office PC on your local network, the defaults are fine.
+
+### If something doesn't work
+- **"Port already in use"** — something else is using port 8080. Stop it, or change `8080` in `docker-compose.yml` to e.g. `9090` and open <http://localhost:9090>.
+- **The first build failed on a slow network** — just run `docker compose up -d --build` again; it resumes.
+- **Blank page** — give it a minute after starting, then refresh; the database sets itself up on first run.
+
+---
+
+## Screenshots
+
+| | |
+|---|---|
+| **Dashboard** — the morning overview | **Sales** — invoices, payments, printable bills |
+| ![Dashboard](docs/screenshots/02-dashboard.png) | ![Sales](docs/screenshots/07-sales.png) |
+| **Inventory** — stock, costs, low‑stock flags | **Reports** — profit & loss, always up to date |
+| ![Inventory](docs/screenshots/05-inventory.png) | ![Reports](docs/screenshots/15-reports-pl.png) |
+| **Payroll** — runs, payslips, advances | **Help & Guide** — built‑in user manual |
+| ![Payroll](docs/screenshots/11-payroll.png) | ![Help](docs/screenshots/14-help.png) |
+
+More in [`docs/screenshots/`](docs/screenshots/) — employees, attendance, purchasing, production, fixed assets, the chart of accounts, and the light theme.
 
 ---
 

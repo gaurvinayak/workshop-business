@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { api } from '../lib/api';
+import { money } from '../lib/format';
 import { useApi, errMsg } from '../lib/useApi';
 import { useAuth } from '../lib/auth';
 import { PERMISSIONS } from '@workshopos/shared';
@@ -60,7 +61,7 @@ export default function Payroll() {
             <tbody>
               {runs.data?.map((r) => (
                 <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => open(r.id)}>
-                  <td>{r.period}</td><td className="muted">{r.status}</td><td className="num">{r.netTotal}</td>
+                  <td>{r.period}</td><td><span className={`badge ${r.status === 'PAID' ? 'success' : r.status === 'APPROVED' ? 'primary' : 'warning'}`}>{r.status}</span></td><td className="num">{money(r.netTotal)}</td>
                 </tr>
               ))}
               {!runs.data?.length && <tr><td colSpan={3} className="muted">No runs yet.</td></tr>}
@@ -83,7 +84,7 @@ export default function Payroll() {
                 {detail.payslips.map((p) => (
                   <tr key={p.id}>
                     <td>{p.employee.code} {p.employee.name}</td>
-                    <td className="num">{p.paidDays}</td><td className="num">{p.gross}</td><td className="num">{p.totalDeductions}</td><td className="num">{p.net}</td>
+                    <td className="num">{p.paidDays}</td><td className="num">{money(p.gross)}</td><td className="num">{money(p.totalDeductions)}</td><td className="num">{money(p.net)}</td>
                   </tr>
                 ))}
                 {!detail.payslips.length && <tr><td colSpan={5} className="muted">No payslips — add salary structures first.</td></tr>}
@@ -117,8 +118,8 @@ export default function Payroll() {
               <tbody>
                 {advances.data?.map((a) => (
                   <tr key={a.id}>
-                    <td>{a.employee.code} {a.employee.name}</td><td className="num">{a.amount}</td><td className="num">{a.installment}</td>
-                    <td className="num">{a.recovered}</td><td className="muted">{a.isActive ? 'active' : 'cleared'}</td>
+                    <td>{a.employee.code} {a.employee.name}</td><td className="num">{money(a.amount)}</td><td className="num">{money(a.installment)}</td>
+                    <td className="num">{money(a.recovered)}</td><td><span className={`badge ${a.isActive ? 'info' : 'neutral'}`}>{a.isActive ? 'active' : 'cleared'}</span></td>
                   </tr>
                 ))}
                 {!advances.data?.length && <tr><td colSpan={5} className="muted">No advances.</td></tr>}

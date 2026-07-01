@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { api } from '../lib/api';
 import { useApi, errMsg } from '../lib/useApi';
 import { useAuth } from '../lib/auth';
+import { money } from '../lib/format';
 import { PERMISSIONS } from '@workshopos/shared';
 
 interface Item { id: string; sku: string; name: string; }
@@ -85,8 +86,8 @@ export default function Production() {
           <tbody>
             {wos.data?.map((w) => (
               <tr key={w.id}>
-                <td>{w.number}</td><td>{w.description}</td><td className="muted">{w.status}</td>
-                <td className="num">{w.materialCost}</td><td className="num">{w.outputValue}</td>
+                <td>{w.number}</td><td>{w.description}</td><td><span className={`badge ${w.status === 'COMPLETED' ? 'success' : w.status === 'CANCELLED' ? 'danger' : 'warning'}`}>{w.status.replace('_', ' ')}</span></td>
+                <td className="num">{money(w.materialCost)}</td><td className="num">{money(w.outputValue)}</td>
                 <td>{canManage && w.status !== 'COMPLETED' && <button className="secondary" style={{ margin: 0, padding: '4px 10px' }} onClick={() => complete(w.id)}>Complete</button>}</td>
               </tr>
             ))}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApi } from '../lib/useApi';
 import { downloadCsv } from '../lib/csv';
+import { money } from '../lib/format';
 
 interface TBRow { code: string; name: string; debit: string; credit: string; }
 interface TrialBalance { rows: TBRow[]; totalDebit: string; totalCredit: string; balanced: boolean; }
@@ -44,8 +45,8 @@ export default function Reports() {
           <table>
             <thead><tr><th>Code</th><th>Account</th><th className="num">Debit</th><th className="num">Credit</th></tr></thead>
             <tbody>
-              {tb.data.rows.map((r) => <tr key={r.code}><td>{r.code}</td><td>{r.name}</td><td className="num">{r.debit}</td><td className="num">{r.credit}</td></tr>)}
-              <tr style={{ fontWeight: 700 }}><td></td><td>Total</td><td className="num">{tb.data.totalDebit}</td><td className="num">{tb.data.totalCredit}</td></tr>
+              {tb.data.rows.map((r) => <tr key={r.code}><td>{r.code}</td><td>{r.name}</td><td className="num">{money(r.debit)}</td><td className="num">{money(r.credit)}</td></tr>)}
+              <tr style={{ fontWeight: 700 }}><td></td><td>Total</td><td className="num">{money(tb.data.totalDebit)}</td><td className="num">{money(tb.data.totalCredit)}</td></tr>
             </tbody>
           </table>
           <p className={tb.data.balanced ? 'muted' : 'error'}>{tb.data.balanced ? '✓ Balanced' : '✗ NOT balanced'}</p>
@@ -55,10 +56,10 @@ export default function Reports() {
       {tab === 'pl' && pl.data && (
         <div className="card">
           <h3 style={{ marginTop: 0 }}>Income</h3>
-          <table><tbody>{pl.data.income.map((r) => <tr key={r.code}><td>{r.name}</td><td className="num">{r.amount}</td></tr>)}<tr style={{ fontWeight: 700 }}><td>Total income</td><td className="num">{pl.data.totalIncome}</td></tr></tbody></table>
+          <table><tbody>{pl.data.income.map((r) => <tr key={r.code}><td>{r.name}</td><td className="num">{money(r.amount)}</td></tr>)}<tr style={{ fontWeight: 700 }}><td>Total income</td><td className="num">{money(pl.data.totalIncome)}</td></tr></tbody></table>
           <h3>Expenses</h3>
-          <table><tbody>{pl.data.expense.map((r) => <tr key={r.code}><td>{r.name}</td><td className="num">{r.amount}</td></tr>)}<tr style={{ fontWeight: 700 }}><td>Total expense</td><td className="num">{pl.data.totalExpense}</td></tr></tbody></table>
-          <p className="stat">Net profit: {pl.data.netProfit}</p>
+          <table><tbody>{pl.data.expense.map((r) => <tr key={r.code}><td>{r.name}</td><td className="num">{money(r.amount)}</td></tr>)}<tr style={{ fontWeight: 700 }}><td>Total expense</td><td className="num">{money(pl.data.totalExpense)}</td></tr></tbody></table>
+          <p className="stat">Net profit: {money(pl.data.netProfit)}</p>
         </div>
       )}
 
@@ -68,15 +69,15 @@ export default function Reports() {
         return (
           <div className="card">
             <div className="grid" style={{ marginBottom: 16 }}>
-              <div><div className="muted">Current</div><div className="stat">{d.totals.current}</div></div>
-              <div><div className="muted">31–60</div><div className="stat">{d.totals.d30}</div></div>
-              <div><div className="muted">61–90</div><div className="stat">{d.totals.d60}</div></div>
-              <div><div className="muted">90+</div><div className="stat">{d.totals.d90plus}</div></div>
+              <div><div className="muted">Current</div><div className="stat">{money(d.totals.current)}</div></div>
+              <div><div className="muted">31–60</div><div className="stat">{money(d.totals.d30)}</div></div>
+              <div><div className="muted">61–90</div><div className="stat">{money(d.totals.d60)}</div></div>
+              <div><div className="muted">90+</div><div className="stat">{money(d.totals.d90plus)}</div></div>
             </div>
             <table>
               <thead><tr><th>Party</th><th>Ref</th><th className="num">Age (days)</th><th className="num">Outstanding</th></tr></thead>
               <tbody>
-                {d.rows.map((r, i) => <tr key={i}><td>{r.party}</td><td>{r.ref}</td><td className="num">{r.ageDays}</td><td className="num">{r.outstanding}</td></tr>)}
+                {d.rows.map((r, i) => <tr key={i}><td>{r.party}</td><td>{r.ref}</td><td className="num">{r.ageDays}</td><td className="num">{money(r.outstanding)}</td></tr>)}
                 {!d.rows.length && <tr><td colSpan={4} className="muted">Nothing outstanding.</td></tr>}
               </tbody>
             </table>
@@ -87,9 +88,9 @@ export default function Reports() {
       {tab === 'tax' && tax.data && (
         <div className="card">
           <div className="grid">
-            <div><div className="muted">Output tax (collected)</div><div className="stat">{tax.data.outputTax}</div></div>
-            <div><div className="muted">Input tax (paid)</div><div className="stat">{tax.data.inputTax}</div></div>
-            <div><div className="muted">Net payable</div><div className="stat">{tax.data.netPayable}</div></div>
+            <div><div className="muted">Output tax (collected)</div><div className="stat">{money(tax.data.outputTax)}</div></div>
+            <div><div className="muted">Input tax (paid)</div><div className="stat">{money(tax.data.inputTax)}</div></div>
+            <div><div className="muted">Net payable</div><div className="stat">{money(tax.data.netPayable)}</div></div>
           </div>
         </div>
       )}
@@ -104,7 +105,7 @@ export default function Reports() {
                   <tr key={`${e.number}-${i}`}>
                     <td>{i === 0 ? e.number : ''}</td>
                     <td>{i === 0 ? e.date.slice(0, 10) : ''}</td>
-                    <td>{l.account}</td><td className="num">{l.debit}</td><td className="num">{l.credit}</td>
+                    <td>{l.account}</td><td className="num">{money(l.debit)}</td><td className="num">{money(l.credit)}</td>
                   </tr>
                 )),
               )}

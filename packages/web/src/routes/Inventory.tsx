@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { api } from '../lib/api';
 import { useApi, errMsg } from '../lib/useApi';
 import { useAuth } from '../lib/auth';
+import { money, qty } from '../lib/format';
 import { PERMISSIONS } from '@workshopos/shared';
 
 interface Uom { id: string; name: string; }
@@ -105,8 +106,8 @@ export default function Inventory() {
             {stock.data?.map((s, i) => (
               <tr key={i}>
                 <td>{s.sku}</td><td>{s.name}</td><td>{s.location}</td>
-                <td className="num">{s.quantity}</td><td className="num">{s.avgCost}</td>
-                <td>{s.low && <span style={{ color: 'var(--danger)' }}>● low</span>}</td>
+                <td className="num">{qty(s.quantity)}</td><td className="num">{money(s.avgCost)}</td>
+                <td>{s.low && <span className="badge danger">low</span>}</td>
               </tr>
             ))}
             {!stock.data?.length && <tr><td colSpan={6} className="muted">No stock yet.</td></tr>}

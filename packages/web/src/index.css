@@ -297,6 +297,14 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-fam
 }
 .theme-toggle-label { font-size: var(--text-sm); }
 
+/* ---- Help / docs body ---- */
+.help-body { color: var(--text); font-size: var(--text-base); }
+.help-body p { margin: 0 0 var(--space-3); }
+.help-body p:last-child { margin-bottom: 0; }
+.help-body ul { margin: 0 0 var(--space-3); padding-left: var(--space-5); }
+.help-body li { margin-bottom: var(--space-1); }
+.help-body b { color: var(--text); font-weight: 600; }
+
 /* ---- Money semantics ---- */
 .pos { color: var(--pos); font-variant-numeric: tabular-nums; }
 .neg { color: var(--neg); font-variant-numeric: tabular-nums; }
@@ -318,8 +326,8 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-fam
 
 /* ---- Utilities ---- */
 .muted { color: var(--text-muted); }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); }
-.stat { font-size: var(--text-2xl); font-weight: 700; margin-top: var(--space-1); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: var(--space-4); }
+.stat { font-size: clamp(16px, 1.7vw, 23px); font-weight: 700; margin-top: var(--space-1); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; white-space: nowrap; }
 .row { display: flex; gap: var(--space-3); align-items: flex-end; }
 .row > * { flex: 1; }
 

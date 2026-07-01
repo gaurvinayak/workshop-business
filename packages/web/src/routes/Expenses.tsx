@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { api } from '../lib/api';
 import { useApi, errMsg } from '../lib/useApi';
 import { useAuth } from '../lib/auth';
+import { money } from '../lib/format';
 import { PERMISSIONS } from '@workshopos/shared';
 
 interface Account { code: string; name: string; type: string; isPostable: boolean; }
@@ -57,7 +58,7 @@ export default function Expenses() {
           <thead><tr><th>Number</th><th>Date</th><th>Description</th><th>Category</th><th>Method</th><th className="num">Amount</th></tr></thead>
           <tbody>
             {expenses.data?.map((x) => (
-              <tr key={x.id}><td>{x.number}</td><td>{x.date.slice(0, 10)}</td><td>{x.description}</td><td className="muted">{x.accountCode}</td><td className="muted">{x.method}</td><td className="num">{x.amount}</td></tr>
+              <tr key={x.id}><td>{x.number}</td><td>{x.date.slice(0, 10)}</td><td>{x.description}</td><td className="muted">{x.accountCode}</td><td className="muted">{x.method}</td><td className="num">{money(x.amount)}</td></tr>
             ))}
             {!expenses.data?.length && <tr><td colSpan={6} className="muted">No expenses yet.</td></tr>}
           </tbody>

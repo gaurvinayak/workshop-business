@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
+import { money } from '../lib/format';
 import { useApi, errMsg } from '../lib/useApi';
 import { useAuth } from '../lib/auth';
 import { PERMISSIONS } from '@workshopos/shared';
@@ -109,7 +110,7 @@ export default function Sales() {
             {invoices.data?.map((i) => (
               <tr key={i.id}>
                 <td>{i.number ?? '(draft)'}</td><td>{i.customer.name}</td><td>{i.date.slice(0, 10)}</td>
-                <td className="muted">{i.status}</td><td className="num">{i.total}</td><td className="num">{i.amountPaid}</td>
+                <td><span className={`badge ${i.status === 'PAID' ? 'success' : i.status === 'PARTIALLY_PAID' ? 'info' : i.status === 'POSTED' ? 'primary' : i.status === 'VOID' ? 'danger' : 'warning'}`}>{i.status.replace('_', ' ')}</span></td><td className="num">{money(i.total)}</td><td className="num">{money(i.amountPaid)}</td>
                 <td><Link to={`/print/invoice/${i.id}`}>Print</Link></td>
               </tr>
             ))}
