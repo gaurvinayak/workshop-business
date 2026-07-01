@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WorkshopOS — Design System</title>
+<style>
+  :root{
+    --graphite-900:#0e1116;--graphite-800:#171b22;--graphite-750:#1c2129;--graphite-700:#232833;
+    --graphite-600:#2a303b;--graphite-500:#3a4250;
+    --bg:var(--graphite-900);--surface:var(--graphite-800);--surface-2:var(--graphite-750);--surface-3:var(--graphite-700);
+    --border:var(--graphite-600);--border-strong:var(--graphite-500);
+    --text:#e7eaf0;--text-muted:#9aa4b2;--text-faint:#6b7484;
+    --primary:#3b82f6;--primary-hover:#2f6fe0;--primary-weak:rgba(59,130,246,.15);
+    --success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--info:#38bdf8;
+    --success-weak:rgba(34,197,94,.14);--warning-weak:rgba(245,158,11,.15);--danger-weak:rgba(239,68,68,.14);--info-weak:rgba(56,189,248,.14);
+    --pos:#22c55e;--neg:#ef4444;--focus-ring:rgba(59,130,246,.55);
+    --font-sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --radius-sm:6px;--radius-md:8px;--radius-lg:12px;--radius-pill:999px;
+    --shadow-1:0 1px 2px rgba(0,0,0,.3);--shadow-2:0 6px 20px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+  [data-theme="light"]{
+    --bg:#f5f7fa;--surface:#fff;--surface-2:#eef1f5;--surface-3:#e6eaf0;--border:#dde3ea;--border-strong:#c3ccd8;
+    --text:#16202e;--text-muted:#566374;--text-faint:#8593a3;--primary:#2563eb;--primary-hover:#1d4fd0;--primary-weak:rgba(37,99,235,.1);
+    --shadow-1:0 1px 2px rgba(16,24,40,.08);--shadow-2:0 6px 20px rgba(16,24,40,.1);color-scheme:light;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:14px;line-height:1.5}
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 28px 80px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:8px}
+  .brand{display:flex;align-items:center;gap:12px;font-size:22px;font-weight:800;letter-spacing:.01em}
+  .brand .mark{width:22px;height:22px;border-radius:5px;background:linear-gradient(135deg,var(--primary),var(--warning))}
+  .lede{color:var(--text-muted);max-width:640px;margin:0 0 28px}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-faint);margin:44px 0 14px;border-bottom:1px solid var(--border);padding-bottom:8px}
+  h3{font-size:15px;margin:22px 0 10px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-1)}
+  .grid{display:grid;gap:14px}
+  .cols-2{grid-template-columns:1fr 1fr}.cols-3{grid-template-columns:repeat(3,1fr)}.cols-4{grid-template-columns:repeat(4,1fr)}
+  .muted{color:var(--text-muted)}
+  code{font-family:var(--font-mono);font-size:12px;background:var(--surface-2);padding:1px 6px;border-radius:5px;color:var(--text-muted)}
+
+  /* swatches */
+  .sw{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;background:var(--surface)}
+  .sw .chip{height:56px}
+  .sw .meta{padding:8px 10px;font-size:12px}
+  .sw .meta b{display:block;font-weight:600}
+
+  /* type scale */
+  .type-row{display:flex;align-items:baseline;gap:16px;padding:6px 0;border-bottom:1px dashed var(--border)}
+  .type-row span.k{width:64px;color:var(--text-faint);font-family:var(--font-mono);font-size:12px}
+
+  /* buttons */
+  button{font-family:inherit;font-size:14px;font-weight:600;padding:9px 16px;border-radius:var(--radius-md);border:1px solid transparent;cursor:pointer;background:var(--primary);color:#fff;transition:background .12s}
+  button:hover{background:var(--primary-hover)}
+  button.secondary{background:var(--surface-2);color:var(--text);border-color:var(--border)}
+  button.secondary:hover{background:var(--surface-3)}
+  button.danger{background:var(--danger)}
+  button:disabled{opacity:.55;cursor:not-allowed}
+  button:focus-visible{outline:none;box-shadow:0 0 0 3px var(--focus-ring)}
+
+  label{display:block;font-size:13px;color:var(--text-muted);font-weight:500;margin:10px 0 4px}
+  input,select{width:100%;padding:9px 11px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text);font-size:14px;font-family:inherit}
+  input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--focus-ring)}
+  input.err{border-color:var(--danger)}
+
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:var(--radius-pill);font-size:12px;font-weight:600;letter-spacing:.02em;text-transform:uppercase}
+  .badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .badge.neutral{background:var(--surface-3);color:var(--text-muted)}
+  .badge.primary{background:var(--primary-weak);color:var(--primary)}
+  .badge.success{background:var(--success-weak);color:var(--success)}
+  .badge.warning{background:var(--warning-weak);color:var(--warning)}
+  .badge.danger{background:var(--danger-weak);color:var(--danger)}
+  .badge.info{background:var(--info-weak);color:var(--info)}
+
+  .alert{border:1px solid var(--border);border-left-width:3px;border-radius:var(--radius-md);padding:10px 14px;font-size:13px;margin-bottom:8px}
+  .alert.success{border-left-color:var(--success);background:var(--success-weak)}
+  .alert.warning{border-left-color:var(--warning);background:var(--warning-weak)}
+  .alert.danger{border-left-color:var(--danger);background:var(--danger-weak)}
+  .alert.info{border-left-color:var(--info);background:var(--info-weak)}
+
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--border)}
+  th{color:var(--text-muted);font-weight:600;font-size:13px}
+  td.num,th.num{text-align:right;font-family:var(--font-mono);font-size:13px;font-variant-numeric:tabular-nums}
+  .pos{color:var(--pos)}.neg{color:var(--neg)}
+  .stat{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em;margin-top:2px}
+
+  /* mock app shell */
+  .shell{display:flex;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+  .shell .side{width:180px;background:var(--surface);border-right:1px solid var(--border);padding:16px 10px}
+  .shell .side .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;margin:0 0 14px 6px}
+  .shell .side .logo .mark{width:12px;height:12px;border-radius:3px;background:linear-gradient(135deg,var(--primary),var(--warning))}
+  .shell .side a{display:block;padding:7px 10px;border-radius:8px;color:var(--text-muted);font-size:13px;font-weight:500;text-decoration:none}
+  .shell .side a.active{background:var(--primary-weak);color:var(--primary);box-shadow:inset 2px 0 0 var(--primary)}
+  .shell .main{flex:1;padding:20px;background:var(--bg)}
+  .toggle{background:var(--surface-2);color:var(--text);border:1px solid var(--border)}
+  .swatch-mono{font-family:var(--font-mono);font-size:11px;color:var(--text-faint)}
+  .spacer{background:var(--primary);height:14px;border-radius:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="mark"></span> WorkshopOS Design System</div>
+    <button class="toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme==='dark'?'light':'dark'">Toggle theme</button>
+  </header>
+  <p class="lede">The visual language for a small rig/workshop business tool — built for legibility of money, dense-but-calm data, and fast all-day use. Dark is the default; toggle to the print-friendly light theme above.</p>
+
+  <h2>Color — semantic tokens</h2>
+  <div class="grid cols-4">
+    <div class="sw"><div class="chip" style="background:var(--bg)"></div><div class="meta"><b>--bg</b><span class="swatch-mono">app background</span></div></div>
+    <div class="sw"><div class="chip" style="background:var(--surface)"></div><div class="meta"><b>--surface</b><span class="swatch-mono">cards, sidebar</span></div></div>
+    <div class="sw"><div class="chip" style="background:var(--surface-2)"></div><div class="meta"><b>--surface-2</b><span class="swatch-mono">inputs, hover</span></div></div>
+    <div class="sw"><div class="chip" style="background:var(--border)"></div><div class="meta"><b>--border</b><span class="swatch-mono">dividers</span></div></div>
+    <div class="sw"><div class="chip" style="background:var(--primary)"></div><div class="meta"><b>--primary</b><span class="swatch-mono">actions, links</span></div></div>
+    <div class="sw"><div class="chip" style="background:var(--success)"></div><div class="meta"><b>--success</b><span class="swatch-mono">paid, gains</span></div></div>
+    <div class="sw"><div class="chip" style="background:var(--warning)"></div><div class="meta"><b>--warning</b><span class="swatch-mono">draft, due soon</span></div></div>
+    <div class="sw"><div class="chip" style="background:var(--danger)"></div><div class="meta"><b>--danger</b><span class="swatch-mono">overdue, losses</span></div></div>
+  </div>
+
+  <h2>Typography</h2>
+  <div class="card">
+    <div class="type-row"><span class="k">30 / 700</span><span style="font-size:30px;font-weight:700">Profit &amp; Loss</span></div>
+    <div class="type-row"><span class="k">24 / 700</span><span style="font-size:24px;font-weight:700">Dashboard</span></div>
+    <div class="type-row"><span class="k">16 / 600</span><span style="font-size:16px;font-weight:600">Recent invoices</span></div>
+    <div class="type-row"><span class="k">14 / 400</span><span style="font-size:14px">Body text — the workshop delivered 12 units this week.</span></div>
+    <div class="type-row"><span class="k">13 / 500</span><span style="font-size:13px;color:var(--text-muted)">Field label</span></div>
+    <div class="type-row"><span class="k">mono</span><span style="font-family:var(--font-mono)">₹ 1,180.0000 &nbsp; -270.0000 &nbsp; 90</span></div>
+  </div>
+
+  <h2>Spacing — 4px base</h2>
+  <div class="card grid" style="grid-template-columns:repeat(8,1fr);align-items:end">
+    <div><div class="spacer" style="width:4px"></div><span class="swatch-mono">1·4</span></div>
+    <div><div class="spacer" style="width:8px"></div><span class="swatch-mono">2·8</span></div>
+    <div><div class="spacer" style="width:12px"></div><span class="swatch-mono">3·12</span></div>
+    <div><div class="spacer" style="width:16px"></div><span class="swatch-mono">4·16</span></div>
+    <div><div class="spacer" style="width:24px"></div><span class="swatch-mono">6·24</span></div>
+    <div><div class="spacer" style="width:32px"></div><span class="swatch-mono">8·32</span></div>
+    <div><div class="spacer" style="width:40px"></div><span class="swatch-mono">10·40</span></div>
+    <div><div class="spacer" style="width:48px"></div><span class="swatch-mono">12·48</span></div>
+  </div>
+
+  <h2>Buttons &amp; inputs</h2>
+  <div class="grid cols-2">
+    <div class="card">
+      <h3>Buttons</h3>
+      <button>Post invoice</button>
+      <button class="secondary">Save draft</button>
+      <button class="danger">Void</button>
+      <button disabled>Disabled</button>
+    </div>
+    <div class="card">
+      <h3>Form fields</h3>
+      <label>Customer</label>
+      <select><option>Bob Builder</option></select>
+      <label>Amount</label>
+      <input value="1,180.00" />
+      <label>Invalid field</label>
+      <input class="err" value="-5" />
+      <div class="alert danger" style="margin-top:8px">Amount must be positive.</div>
+    </div>
+  </div>
+
+  <h2>Status badges</h2>
+  <div class="card" style="display:flex;gap:8px;flex-wrap:wrap">
+    <span class="badge warning">Draft</span>
+    <span class="badge primary">Posted</span>
+    <span class="badge success">Paid</span>
+    <span class="badge info">Partial</span>
+    <span class="badge danger">Overdue</span>
+    <span class="badge danger">Low stock</span>
+    <span class="badge neutral">Closed</span>
+  </div>
+
+  <h2>Alerts</h2>
+  <div class="card">
+    <div class="alert success">Invoice INV-2026-0002 posted. Trial balance is balanced.</div>
+    <div class="alert warning">Steel rod is below its reorder level (5 left).</div>
+    <div class="alert danger">Insufficient stock: on hand 3, requested 10.</div>
+    <div class="alert info">This period is closed — corrections go to the next run.</div>
+  </div>
+
+  <h2>Sample screen — Dashboard</h2>
+  <div class="shell">
+    <div class="side">
+      <div class="logo"><span class="mark"></span> WorkshopOS</div>
+      <a class="active">Dashboard</a><a>Inventory</a><a>Sales</a><a>Production</a><a>Payroll</a><a>Reports</a>
+    </div>
+    <div class="main">
+      <div class="grid cols-3">
+        <div class="card"><div class="muted">Cash &amp; bank</div><div class="stat">590.00</div></div>
+        <div class="card"><div class="muted">Receivables</div><div class="stat">0.00</div></div>
+        <div class="card"><div class="muted">Low-stock items</div><div class="stat">1</div></div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Sample screen — Invoices table</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>Number</th><th>Customer</th><th>Status</th><th class="num">Total</th><th class="num">Balance</th></tr></thead>
+      <tbody>
+        <tr><td>INV-2026-0001</td><td>Bob Builder</td><td><span class="badge success">Paid</span></td><td class="num">590.00</td><td class="num pos">0.00</td></tr>
+        <tr><td>INV-2026-0002</td><td>Acme Yards</td><td><span class="badge info">Partial</span></td><td class="num">1,180.00</td><td class="num">590.00</td></tr>
+        <tr><td>INV-2026-0003</td><td>Delta Rig Co.</td><td><span class="badge danger">Overdue</span></td><td class="num">2,360.00</td><td class="num neg">2,360.00</td></tr>
+        <tr><td>—</td><td>Nova Fab</td><td><span class="badge warning">Draft</span></td><td class="num">450.00</td><td class="num">450.00</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="muted" style="margin-top:40px;font-size:12px">WorkshopOS Design System · tokens implemented in <code>packages/web/src/index.css</code> · spec in <code>docs/DESIGN-SYSTEM.md</code></p>
+</div>
+</body>
+</html>

@@ -45,6 +45,7 @@ See [`docs/00-overview.md`](docs/00-overview.md) for the full build-vs-buy analy
 | [Phase 1 status](docs/PHASE-1-STATUS.md) | The MVP — modules built and how they were validated |
 | [Phase 2 status](docs/PHASE-2-STATUS.md) | Workflow round-out: reports, printable invoices, quotations, returns, stock count, advances, expenses |
 | [Phase 3 status](docs/PHASE-3-STATUS.md) | Depth: production/job costing, fixed assets & depreciation |
+| [Design system](docs/DESIGN-SYSTEM.md) | UI/UX language: principles, tokens, components, patterns (living guide: `docs/design/styleguide.html`) |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | How to install, run, and develop locally |
 
 ## Quick mental model
