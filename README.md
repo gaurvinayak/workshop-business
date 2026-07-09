@@ -59,6 +59,10 @@ Out of the box it uses simple built‑in passwords so it "just works" on your ow
 
 ---
 
+## 🎬 Demo video
+
+A ~1-minute walkthrough — sign in, post a live invoice, and tour inventory, production, reports, payroll, users & roles, and the built-in help, in both dark and light themes: **[`docs/demo/workshopos-demo.mp4`](docs/demo/workshopos-demo.mp4)**.
+
 ## Screenshots
 
 | | |
