@@ -61,7 +61,10 @@ Out of the box it uses simple built‑in passwords so it "just works" on your ow
 
 ## 🎬 Demo video
 
-A ~1-minute walkthrough — sign in, post a live invoice, and tour inventory, production, reports, payroll, users & roles, and the built-in help, in both dark and light themes: **[`docs/demo/workshopos-demo.mp4`](docs/demo/workshopos-demo.mp4)**.
+Two short walkthroughs of the running app:
+
+- **[`docs/demo/workshopos-testreel.mp4`](docs/demo/workshopos-testreel.mp4)** — produced with **[testreel](https://github.com/greentfrapp/testreel)** from the definition in [`docs/demo/recording.json`](docs/demo/recording.json): a polished tour (browser window chrome, gradient backdrop, animated cursor) through sign-in and every module, ending with the dark/light theme toggle.
+- **[`docs/demo/workshopos-demo.mp4`](docs/demo/workshopos-demo.mp4)** — a captioned version that also posts a live invoice and shows the dashboard update in real time.
 
 ## Screenshots
 

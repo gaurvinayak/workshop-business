@@ -1,0 +1,46 @@
+{
+  "url": "http://localhost:4173",
+  "viewport": { "width": 1280, "height": 800 },
+  "outputSize": { "width": 1560, "height": 1000 },
+  "outputFormat": "mp4",
+  "chrome": { "url": true },
+  "background": {
+    "gradient": { "from": "#1e293b", "to": "#0b1120" },
+    "borderRadius": 14
+  },
+  "steps": [
+    { "action": "wait", "ms": 1600 },
+    { "action": "type", "selector": "input[type=email]", "text": "owner@ironworks.test" },
+    { "action": "wait", "ms": 300 },
+    { "action": "type", "selector": "input[type=password]", "text": "workshop123" },
+    { "action": "wait", "ms": 300 },
+    { "action": "click", "selector": "button[type=submit]" },
+    { "action": "wait", "ms": 2800 },
+
+    { "action": "click", "selector": "a[href=\"/employees\"]" },
+    { "action": "wait", "ms": 2200 },
+    { "action": "click", "selector": "a[href=\"/attendance\"]" },
+    { "action": "wait", "ms": 2200 },
+    { "action": "click", "selector": "a[href=\"/inventory\"]" },
+    { "action": "wait", "ms": 2400 },
+    { "action": "click", "selector": "a[href=\"/purchasing\"]" },
+    { "action": "wait", "ms": 2200 },
+    { "action": "click", "selector": "a[href=\"/sales\"]" },
+    { "action": "wait", "ms": 2600 },
+    { "action": "click", "selector": "a[href=\"/production\"]" },
+    { "action": "wait", "ms": 2400 },
+    { "action": "click", "selector": "a[href=\"/payroll\"]" },
+    { "action": "wait", "ms": 2400 },
+    { "action": "click", "selector": "a[href=\"/reports\"]" },
+    { "action": "wait", "ms": 2600 },
+    { "action": "click", "selector": "a[href=\"/users\"]" },
+    { "action": "wait", "ms": 2600 },
+    { "action": "click", "selector": "a[href=\"/help\"]" },
+    { "action": "wait", "ms": 2600 },
+
+    { "action": "click", "selector": "a[href=\"/\"]" },
+    { "action": "wait", "ms": 1500 },
+    { "action": "click", "selector": ".theme-toggle" },
+    { "action": "wait", "ms": 2600 }
+  ]
+}
